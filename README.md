@@ -46,6 +46,18 @@ Copy `.env.example` to `.env.local` for local work.
 - `DATABASE_URL`: PostgreSQL or Supabase database URL. Not required for the current mock-data UI.
 - `OPENAI_API_KEY`: Optional for real AI replies. If omitted, the app uses safe local mock drafts.
 - `NEXT_PUBLIC_APP_URL`: Public app URL after deployment.
+- `AUTH_SECRET`: Required for private access. Generate with `node scripts/generate-auth.mjs "your password"`.
+- `ADMIN_PASSWORD_HASH`: Required for private access. Generate with `node scripts/generate-auth.mjs "your password"`.
+
+## Authentication
+
+The command center is protected by a password login and signed HTTP-only session cookie. Generate the required Vercel environment variables with:
+
+```bash
+node scripts/generate-auth.mjs "your admin password"
+```
+
+Add the printed `AUTH_SECRET` and `ADMIN_PASSWORD_HASH` values to Vercel before using the deployed app.
 
 ## Deployment Target
 
@@ -55,4 +67,3 @@ Vercel is the intended first deployment target. The default Vercel settings for 
 - Install command: `npm install`
 - Build command: `npm run build`
 - Output directory: `.next`
-

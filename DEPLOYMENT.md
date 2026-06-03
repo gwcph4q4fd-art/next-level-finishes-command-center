@@ -23,7 +23,20 @@ To deploy from this machine, Codex needs one of these paths:
 
 ## Environment Variables for First Public Deployment
 
-Only this one is recommended immediately after the Vercel URL exists:
+These are required once login protection is enabled:
+
+```text
+AUTH_SECRET=
+ADMIN_PASSWORD_HASH=
+```
+
+Generate both values locally:
+
+```bash
+node scripts/generate-auth.mjs "your admin password"
+```
+
+This one should also be set after the Vercel URL exists:
 
 ```text
 NEXT_PUBLIC_APP_URL=https://your-vercel-url.vercel.app
@@ -43,4 +56,3 @@ OPENAI_API_KEY=
 3. Import the GitHub repo into Vercel.
 4. Deploy with default Next.js settings.
 5. Confirm the public URL loads the dashboard.
-
