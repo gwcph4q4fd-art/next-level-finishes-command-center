@@ -2,6 +2,8 @@ node_modules
 .npm-cache
 .next
 .vercel
+.vercel-xdg
+.vercel-local
 .git-codex-deploy
 .env
 .env.local

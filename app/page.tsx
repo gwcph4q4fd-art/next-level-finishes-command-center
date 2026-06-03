@@ -57,6 +57,7 @@ export default function DashboardPage() {
               <p className="mt-2 max-w-2xl text-sm text-steel">
                 Draft first, approve second. No texts, emails, QuickBooks changes, or Jobber changes happen automatically.
               </p>
+              <p className="mt-2 text-xs font-semibold text-pine">Production sync check: GitHub to Vercel is active.</p>
             </div>
             <Link href="/briefing" className="inline-flex min-h-10 items-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white">
               <Sparkles className="h-4 w-4" />
