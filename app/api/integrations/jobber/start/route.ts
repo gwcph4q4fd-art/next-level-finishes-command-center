@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   if (!config.isConfigured) {
     return NextResponse.redirect(
       new URL(
-        `/integrations?jobber=missing-config&redirect_uri=${encodeURIComponent(getJobberRedirectUri(request))}`,
+        `/integrations?jobber=missing-config&redirect_uri=${encodeURIComponent(getJobberRedirectUri())}`,
         request.url
       )
     );
@@ -24,6 +24,5 @@ export async function GET(request: Request) {
     maxAge: 10 * 60
   });
 
-  return NextResponse.redirect(buildJobberAuthorizeUrl(state, request));
+  return NextResponse.redirect(buildJobberAuthorizeUrl(state));
 }
-

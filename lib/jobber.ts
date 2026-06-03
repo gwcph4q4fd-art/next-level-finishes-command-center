@@ -1,6 +1,7 @@
 const JOBBER_AUTHORIZE_URL = "https://api.getjobber.com/api/oauth/authorize";
 const JOBBER_TOKEN_URL = "https://api.getjobber.com/api/oauth/token";
 const JOBBER_GRAPHQL_URL = "https://api.getjobber.com/api/graphql";
+const JOBBER_OAUTH_BASE_URL = "https://next-level-finishes-command-center.vercel.app";
 
 export type JobberTokenResponse = {
   access_token: string;
@@ -27,14 +28,12 @@ export type JobberConnection = {
 export const JOBBER_CONNECTION_COOKIE = "jobber_connection";
 export const JOBBER_TOKEN_COOKIE = "jobber_token";
 
-function getBaseUrl(request?: Request) {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
-  if (request) return new URL(request.url).origin;
-  return "";
+function getJobberBaseUrl() {
+  return JOBBER_OAUTH_BASE_URL;
 }
 
-export function getJobberRedirectUri(request?: Request) {
-  return `${getBaseUrl(request)}/api/integrations/jobber/callback`;
+export function getJobberRedirectUri() {
+  return `${getJobberBaseUrl()}/api/integrations/jobber/callback`;
 }
 
 export function getJobberConfig() {
@@ -45,12 +44,12 @@ export function getJobberConfig() {
   };
 }
 
-export function buildJobberAuthorizeUrl(state: string, request?: Request) {
+export function buildJobberAuthorizeUrl(state: string) {
   const { clientId } = getJobberConfig();
   const url = new URL(JOBBER_AUTHORIZE_URL);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", getJobberRedirectUri(request));
+  url.searchParams.set("redirect_uri", getJobberRedirectUri());
   url.searchParams.set("state", state);
   return url.toString();
 }
@@ -62,7 +61,7 @@ export async function exchangeJobberCode(code: string, request: Request) {
     client_secret: clientSecret,
     grant_type: "authorization_code",
     code,
-    redirect_uri: getJobberRedirectUri(request)
+    redirect_uri: getJobberRedirectUri()
   });
 
   const response = await fetch(JOBBER_TOKEN_URL, {

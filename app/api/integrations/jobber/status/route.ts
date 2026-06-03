@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     tokenSaved: Boolean(storedToken?.accessToken),
     tokenExpiresAt: storedToken?.expiresAt,
     configured: getJobberConfig().isConfigured,
-    redirectUri: getJobberRedirectUri(request),
+    redirectUri: getJobberRedirectUri(),
     safety: "Read-only OAuth setup. No Jobber create/edit/delete routes are implemented."
   });
 }
