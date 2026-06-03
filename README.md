@@ -48,6 +48,8 @@ Copy `.env.example` to `.env.local` for local work.
 - `NEXT_PUBLIC_APP_URL`: Public app URL after deployment.
 - `AUTH_SECRET`: Required for private access. Generate with `node scripts/generate-auth.mjs "your password"`.
 - `ADMIN_PASSWORD_HASH`: Required for private access. Generate with `node scripts/generate-auth.mjs "your password"`.
+- `JOBBER_CLIENT_ID`: Jobber developer app client ID.
+- `JOBBER_CLIENT_SECRET`: Jobber developer app client secret.
 
 ## Authentication
 
@@ -58,6 +60,10 @@ node scripts/generate-auth.mjs "your admin password"
 ```
 
 Add the printed `AUTH_SECRET` and `ADMIN_PASSWORD_HASH` values to Vercel before using the deployed app.
+
+## Jobber Setup
+
+Create a Jobber developer app, add the redirect URI shown on the Integrations page, then add `JOBBER_CLIENT_ID` and `JOBBER_CLIENT_SECRET` to Vercel. The initial Jobber integration uses OAuth authorization and only implements read-only connection setup.
 
 ## Deployment Target
 

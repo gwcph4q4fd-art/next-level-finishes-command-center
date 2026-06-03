@@ -1,4 +1,7 @@
-import { CheckCircle2, KeyRound, PlugZap, ShieldCheck } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { CheckCircle2, ExternalLink, KeyRound, PlugZap, ShieldCheck } from "lucide-react";
 import { Badge, Panel } from "@/components/ui";
 
 const setupSections = [
@@ -33,6 +36,22 @@ const setupSections = [
 ];
 
 export default function IntegrationsPage() {
+  const [jobberStatus, setJobberStatus] = useState<{
+    connected: boolean;
+    configured: boolean;
+    accountName?: string;
+    accountId?: string;
+    connectedAt?: string;
+    redirectUri?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/integrations/jobber/status")
+      .then((response) => response.json())
+      .then(setJobberStatus)
+      .catch(() => setJobberStatus(null));
+  }, []);
+
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-6">
@@ -47,11 +66,18 @@ export default function IntegrationsPage() {
         {setupSections.map((integration) => (
           <Panel key={integration.name} title={integration.name} action={<PlugZap className="h-4 w-4 text-pine" />}>
             <div className="grid gap-4">
-              <Badge tone="blue">{integration.mode}</Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="blue">{integration.mode}</Badge>
+                {integration.name === "Jobber" && jobberStatus?.connected ? <Badge tone="green">Connected</Badge> : null}
+                {integration.name === "Jobber" && jobberStatus && !jobberStatus.configured ? <Badge tone="yellow">Needs credentials</Badge> : null}
+              </div>
               <div>
                 <p className="text-sm font-semibold text-ink">Goal</p>
                 <p className="mt-1 text-sm text-steel">{integration.purpose}</p>
               </div>
+              {integration.name === "Jobber" ? (
+                <JobberSetup status={jobberStatus} />
+              ) : null}
               <div>
                 <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
                   <KeyRound className="h-4 w-4 text-pine" />
@@ -75,5 +101,55 @@ export default function IntegrationsPage() {
         ))}
       </section>
     </main>
+  );
+}
+
+function JobberSetup({
+  status
+}: {
+  status: {
+    connected: boolean;
+    configured: boolean;
+    accountName?: string;
+    accountId?: string;
+    connectedAt?: string;
+    redirectUri?: string;
+  } | null;
+}) {
+  return (
+    <div className="grid gap-3 rounded-md border border-ink/10 p-3">
+      <div>
+        <p className="text-sm font-semibold text-ink">Connection Status</p>
+        <p className="mt-1 text-sm text-steel">
+          {!status
+            ? "Checking Jobber setup..."
+            : status.connected
+              ? `Connected to ${status.accountName || "Jobber"}`
+              : status.configured
+                ? "Ready to authorize with Jobber."
+                : "Add Jobber credentials in Vercel before connecting."}
+        </p>
+      </div>
+
+      {status?.redirectUri ? (
+        <div>
+          <p className="text-sm font-semibold text-ink">Jobber Redirect URI</p>
+          <code className="mt-1 block overflow-x-auto rounded-md bg-ink p-3 text-xs text-white">{status.redirectUri}</code>
+        </div>
+      ) : null}
+
+      {status?.connectedAt ? (
+        <p className="text-xs text-steel">Connected at {new Date(status.connectedAt).toLocaleString()}</p>
+      ) : null}
+
+      <a
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white transition hover:bg-pine/90 aria-disabled:pointer-events-none aria-disabled:opacity-60"
+        href="/api/integrations/jobber/start"
+        aria-disabled={!status?.configured || status?.connected}
+      >
+        <ExternalLink className="h-4 w-4" />
+        {status?.connected ? "Jobber Connected" : "Connect Jobber"}
+      </a>
+    </div>
   );
 }
