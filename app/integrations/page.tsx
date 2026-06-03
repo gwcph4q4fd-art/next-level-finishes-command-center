@@ -144,7 +144,7 @@ function JobberSetup({
 
       <a
         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white transition hover:bg-pine/90 aria-disabled:pointer-events-none aria-disabled:opacity-60"
-        href="/api/integrations/jobber/start"
+        href="/api/integrations/jobber/connect"
         aria-disabled={!status?.configured || status?.connected}
       >
         <ExternalLink className="h-4 w-4" />
