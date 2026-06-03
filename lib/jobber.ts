@@ -9,12 +9,23 @@ export type JobberTokenResponse = {
   expires_in?: number;
 };
 
+export type StoredJobberToken = {
+  accessToken: string;
+  refreshToken?: string;
+  tokenType?: string;
+  expiresAt?: string;
+  savedAt: string;
+};
+
 export type JobberConnection = {
   connected: boolean;
   accountName?: string;
   accountId?: string;
   connectedAt?: string;
 };
+
+export const JOBBER_CONNECTION_COOKIE = "jobber_connection";
+export const JOBBER_TOKEN_COOKIE = "jobber_token";
 
 function getBaseUrl(request?: Request) {
   if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
@@ -89,4 +100,3 @@ export async function fetchJobberAccount(accessToken: string) {
     name: data?.data?.account?.name as string | undefined
   };
 }
-
