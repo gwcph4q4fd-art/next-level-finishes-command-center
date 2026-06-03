@@ -1,0 +1,10 @@
+node_modules
+.npm-cache
+.next
+.vercel
+.git-codex-deploy
+.env
+.env.local
+dist
+coverage
+*.log

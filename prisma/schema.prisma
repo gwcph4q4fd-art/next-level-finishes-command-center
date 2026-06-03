@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  ESTIMATE_SCHEDULED
+  QUOTED
+  WON
+  LOST
+}
+
+enum JobType {
+  INTERIOR_PAINTING
+  EXTERIOR_PAINTING
+  CABINET_PAINTING
+  DECK_STAINING
+  DRYWALL_TRIM
+  BATHROOM_REMODEL
+  KITCHEN_REMODEL
+}
+
+enum AppointmentType {
+  ESTIMATE
+  JOB
+  REMINDER
+}
+
+enum DraftType {
+  LEAD_REPLY
+  TEXT_REPLY
+  ESTIMATE
+  DAILY_BRIEFING
+}
+
+enum DraftStatus {
+  DRAFTED
+  APPROVED
+  SENT_MANUALLY
+  DISCARDED
+}
+
+enum IntegrationProvider {
+  QUICKBOOKS
+  JOBBER
+  META
+  WEBSITE
+  TWILIO
+}
+
+enum IntegrationMode {
+  READ_ONLY
+  PLACEHOLDER
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  state     String?  @default("PA")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads     Lead[]
+  estimates Estimate[]
+  jobs      Job[]
+}
+
+model Lead {
+  id          String     @id @default(cuid())
+  customerId  String?
+  source      String
+  status      LeadStatus @default(NEW)
+  jobType     JobType?
+  message     String
+  urgency     String?
+  location    String?
+  nextStep    String?
+  receivedAt  DateTime   @default(now())
+  lastTouched DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  customer    Customer?  @relation(fields: [customerId], references: [id])
+  drafts      AiDraft[]
+  estimates   Estimate[]
+
+  @@index([status])
+  @@index([receivedAt])
+}
+
+model Estimate {
+  id              String   @id @default(cuid())
+  leadId          String?
+  customerId      String?
+  jobType         JobType
+  location        String
+  scope           String
+  materials       String?
+  prepLevel       String?
+  timeline        String?
+  amountLow       Decimal? @db.Decimal(10, 2)
+  amountHigh      Decimal? @db.Decimal(10, 2)
+  customerText    String
+  internalNotes   String
+  exclusions      String
+  followUpDate    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  lead            Lead?    @relation(fields: [leadId], references: [id])
+  customer        Customer? @relation(fields: [customerId], references: [id])
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  customerId  String?
+  title       String
+  jobType     JobType
+  startDate   DateTime
+  endDate     DateTime
+  address     String?
+  status      String    @default("Scheduled")
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  customer    Customer? @relation(fields: [customerId], references: [id])
+}
+
+model Appointment {
+  id          String          @id @default(cuid())
+  title       String
+  type        AppointmentType
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  notes       String?
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model InvoiceSnapshot {
+  id          String   @id @default(cuid())
+  externalId  String?
+  customer    String
+  amount      Decimal  @db.Decimal(10, 2)
+  dueDate     DateTime?
+  status      String
+  source      String   @default("Mock")
+  createdAt   DateTime @default(now())
+}
+
+model BillSnapshot {
+  id          String   @id @default(cuid())
+  vendor      String
+  amount      Decimal  @db.Decimal(10, 2)
+  dueDate     DateTime
+  status      String
+  source      String   @default("Mock")
+  createdAt   DateTime @default(now())
+}
+
+model AiDraft {
+  id            String      @id @default(cuid())
+  type          DraftType
+  status        DraftStatus @default(DRAFTED)
+  leadId        String?
+  prompt        String
+  output        String
+  model         String?
+  approvedAt    DateTime?
+  sentManuallyAt DateTime?
+  createdAt     DateTime    @default(now())
+
+  lead          Lead?       @relation(fields: [leadId], references: [id])
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+model IntegrationConnection {
+  id          String              @id @default(cuid())
+  provider    IntegrationProvider
+  mode        IntegrationMode     @default(PLACEHOLDER)
+  status      String              @default("Not connected")
+  lastSyncAt  DateTime?
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
