@@ -4,6 +4,7 @@ import { decryptCookieValue, encryptCookieValue } from "@/lib/secure-cookie";
 import type { StoredJobberToken } from "@/lib/jobber";
 
 const OWNER_ACCOUNT_KEY = "owner";
+const JOBBER_CACHE_KIND = "jobber-sync-cache";
 
 function authSecret() {
   const secret = process.env.AUTH_SECRET;
@@ -52,7 +53,12 @@ export async function saveJobberConnection(input: {
       externalAccountId: input.accountId || null,
       externalAccountName: input.accountName || "Jobber account",
       lastSyncAt: new Date(),
-      notes: "Read-only Jobber OAuth connection."
+      notes: JSON.stringify({
+        kind: JOBBER_CACHE_KIND,
+        description: "Read-only Jobber OAuth connection.",
+        syncedAt: null,
+        data: null
+      })
     },
     update: {
       mode: IntegrationMode.READ_ONLY,
@@ -64,7 +70,12 @@ export async function saveJobberConnection(input: {
       externalAccountId: input.accountId || null,
       externalAccountName: input.accountName || "Jobber account",
       lastSyncAt: new Date(),
-      notes: "Read-only Jobber OAuth connection."
+      notes: JSON.stringify({
+        kind: JOBBER_CACHE_KIND,
+        description: "Read-only Jobber OAuth connection.",
+        syncedAt: null,
+        data: null
+      })
     }
   });
 
@@ -97,7 +108,8 @@ export async function getJobberConnectionStatus() {
     accountName: connection?.externalAccountName || undefined,
     accountId: connection?.externalAccountId || undefined,
     connectedAt: connection?.updatedAt.toISOString(),
-    lastSyncAt: connection?.lastSyncAt?.toISOString()
+    lastSyncAt: connection?.lastSyncAt?.toISOString(),
+    syncStale: !connection?.lastSyncAt || Date.now() - connection.lastSyncAt.getTime() > 15 * 60 * 1000
   };
 
   console.log("[jobber:status] dashboard status fetch", status);
@@ -121,7 +133,33 @@ export async function getStoredJobberAccessToken() {
   return token?.accessToken || null;
 }
 
-export async function markJobberSynced() {
+export async function getCachedJobberSnapshot<T>() {
+  const connection = await prisma.integrationConnection.findUnique({
+    where: {
+      provider_accountKey: {
+        provider: IntegrationProvider.JOBBER,
+        accountKey: OWNER_ACCOUNT_KEY
+      }
+    }
+  });
+
+  if (!connection?.notes) return null;
+
+  try {
+    const parsed = JSON.parse(connection.notes) as { kind?: string; data?: T; syncedAt?: string | null };
+    if (parsed.kind !== JOBBER_CACHE_KIND || !parsed.data) return null;
+    return {
+      data: parsed.data,
+      syncedAt: parsed.syncedAt || connection.lastSyncAt?.toISOString() || null,
+      stale: !connection.lastSyncAt || Date.now() - connection.lastSyncAt.getTime() > 15 * 60 * 1000
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function markJobberSynced(snapshot?: unknown) {
+  const syncedAt = new Date();
   await prisma.integrationConnection.update({
     where: {
       provider_accountKey: {
@@ -130,8 +168,15 @@ export async function markJobberSynced() {
       }
     },
     data: {
-      lastSyncAt: new Date()
+      lastSyncAt: syncedAt,
+      notes: snapshot
+        ? JSON.stringify({
+            kind: JOBBER_CACHE_KIND,
+            description: "Read-only Jobber OAuth connection.",
+            syncedAt: syncedAt.toISOString(),
+            data: snapshot
+          })
+        : undefined
     }
   });
 }
-
