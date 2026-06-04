@@ -166,7 +166,7 @@ export function JobberDashboard() {
       {data ? (
         <>
           <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-            <Panel title="Upcoming Jobber Jobs">
+            <Panel title="Upcoming Jobber Jobs" action={<Link href="/jobber/jobs" className="text-sm font-semibold text-pine">View all</Link>}>
               <div className="grid gap-4">
                 {data.upcomingJobs.length ? data.upcomingJobs.map((job) => <JobCard key={job.id} job={job} />) : (
                   <EmptyState text="No upcoming jobs came back from Jobber. If work exists, check that jobs have start dates or scheduled visits." />
@@ -185,6 +185,12 @@ export function JobberDashboard() {
           </section>
 
           <Panel title="Jobber Pipeline">
+            <div className="mb-4 flex flex-wrap gap-2 text-sm font-semibold text-pine">
+              <Link href="/jobber/clients">Clients</Link>
+              <Link href="/jobber/quotes">Quotes</Link>
+              <Link href="/jobber/invoices">Invoices</Link>
+              <Link href="/jobber/jobs">Jobs</Link>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {pipelineLabels.map(([key, title]) => (
                 <PipelineColumn key={key} title={title} items={data.pipeline[key]} />

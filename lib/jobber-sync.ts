@@ -80,6 +80,10 @@ export type JobberPipelineItem = {
   date?: string | null;
   jobberUrl?: string | null;
   reason?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  updatedAt?: string | null;
 };
 
 export type JobberCommandCenterData = {
@@ -90,6 +94,11 @@ export type JobberCommandCenterData = {
   errors: string[];
   upcomingJobs: JobberJobCard[];
   activeJobs: JobberJobCard[];
+  requests: JobberPipelineItem[];
+  quotes: JobberPipelineItem[];
+  invoices: JobberPipelineItem[];
+  clients: JobberPipelineItem[];
+  schedule: JobberPipelineItem[];
   recentInvoices: JobberPipelineItem[];
   followUps: JobberPipelineItem[];
   pipeline: {
@@ -148,6 +157,10 @@ function asPipelineItem(item: {
   date?: string | null;
   jobberWebUri?: string | null;
   reason?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  updatedAt?: string | null;
 }): JobberPipelineItem {
   return {
     id: item.id,
@@ -157,7 +170,11 @@ function asPipelineItem(item: {
     amount: item.amount,
     date: item.date,
     jobberUrl: item.jobberWebUri,
-    reason: item.reason
+    reason: item.reason,
+    email: item.email,
+    phone: item.phone,
+    address: item.address,
+    updatedAt: item.updatedAt
   };
 }
 
@@ -300,7 +317,8 @@ async function fetchRequests(accessToken: string) {
       status: request.requestStatus,
       date: request.updatedAt || request.createdAt,
       jobberWebUri: request.jobberWebUri,
-      reason: classifyNeedsFollowUp(request.requestStatus, request.updatedAt) ? "Needs first response or next step." : undefined
+      reason: classifyNeedsFollowUp(request.requestStatus, request.updatedAt) ? "Needs first response or next step." : undefined,
+      updatedAt: request.updatedAt
     })
   );
 }
@@ -348,7 +366,9 @@ async function fetchQuotes(accessToken: string) {
       amount: quote.amounts?.total,
       date: quote.transitionedAt || quote.updatedAt,
       jobberWebUri: quote.jobberWebUri,
-      reason: classifyNeedsFollowUp(quote.quoteStatus, quote.transitionedAt || quote.updatedAt) ? "Quote needs a follow-up touch." : undefined
+      reason: classifyNeedsFollowUp(quote.quoteStatus, quote.transitionedAt || quote.updatedAt) ? "Quote needs a follow-up touch." : undefined,
+      email: firstEmail(quote.client),
+      updatedAt: quote.updatedAt
     })
   );
 }
@@ -396,7 +416,8 @@ async function fetchInvoices(accessToken: string) {
       amount: invoice.amounts?.outstanding ?? invoice.amounts?.total,
       date: invoice.dueDate || invoice.updatedAt,
       jobberWebUri: invoice.jobberWebUri,
-      reason: Number(invoice.amounts?.outstanding || 0) > 0 ? "Money is still outstanding." : undefined
+      reason: Number(invoice.amounts?.outstanding || 0) > 0 ? "Money is still outstanding." : undefined,
+      updatedAt: invoice.updatedAt
     })
   );
 }
@@ -431,7 +452,9 @@ async function fetchClients(accessToken: string) {
       amount: client.balance,
       date: client.updatedAt,
       jobberWebUri: client.jobberWebUri,
-      reason: client.isLead ? "Lead client still needs conversion." : Number(client.balance || 0) > 0 ? "Client has a balance." : undefined
+      reason: client.isLead ? "Lead client still needs conversion." : Number(client.balance || 0) > 0 ? "Client has a balance." : undefined,
+      email: firstEmail(client),
+      updatedAt: client.updatedAt
     })
   );
 }
@@ -533,6 +556,21 @@ export async function syncJobberCommandCenter(options: { force?: boolean; allowC
     .sort((a, b) => String(a.startDate || "").localeCompare(String(b.startDate || "")))
     .slice(0, 12);
   const pipeline = buildPipeline({ jobs: jobs.items, requests: requests.items, quotes: quotes.items, invoices: invoices.items, clients: clients.items });
+  const schedule = upcomingJobs.map((job) =>
+    asPipelineItem({
+      id: job.id,
+      title: job.jobTitle,
+      contactName: job.clientName,
+      status: job.status,
+      amount: job.total || job.quoteAmount,
+      date: job.startDate,
+      jobberWebUri: job.jobberUrl,
+      address: job.address,
+      phone: job.phone,
+      email: job.email,
+      updatedAt: job.lastUpdated
+    })
+  );
 
   const base: Omit<JobberCommandCenterData, "agent"> = {
     connected: true,
@@ -542,6 +580,11 @@ export async function syncJobberCommandCenter(options: { force?: boolean; allowC
     errors,
     upcomingJobs,
     activeJobs: jobs.items.slice(0, 12),
+    requests: requests.items,
+    quotes: quotes.items,
+    invoices: invoices.items,
+    clients: clients.items,
+    schedule,
     recentInvoices: invoices.items.slice(0, 10),
     followUps: pipeline.followUpNeeded,
     pipeline
