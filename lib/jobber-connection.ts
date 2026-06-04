@@ -1,7 +1,7 @@
 import { IntegrationMode, IntegrationProvider } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { decryptCookieValue, encryptCookieValue } from "@/lib/secure-cookie";
-import { refreshJobberToken, type StoredJobberToken } from "@/lib/jobber";
+import { getJwtExpiresAt, getJwtScopeSummary, refreshJobberToken, testJobberGraphql, type StoredJobberToken } from "@/lib/jobber";
 
 const OWNER_ACCOUNT_KEY = "owner";
 const JOBBER_CACHE_KIND = "jobber-sync-cache";
@@ -17,6 +17,8 @@ type JobberConnectionNotes<T = unknown> = {
     lastRefreshStatus?: "not_needed" | "success" | "failed" | "missing_refresh_token";
     lastRefreshError?: string;
     lastGraphqlStatus?: string;
+    lastSyncError?: string;
+    scopes?: string;
   };
 };
 
@@ -35,11 +37,13 @@ export async function saveJobberConnection(input: {
   accountName?: string;
 }) {
   const savedAt = new Date().toISOString();
+  const expiresAt = input.expiresAt || getJwtExpiresAt(input.accessToken);
+  const scopes = getJwtScopeSummary(input.accessToken);
   const encryptedAccessToken = await encryptCookieValue(
     {
       accessToken: input.accessToken,
       tokenType: input.tokenType,
-      expiresAt: input.expiresAt,
+      expiresAt,
       savedAt
     },
     authSecret()
@@ -63,7 +67,7 @@ export async function saveJobberConnection(input: {
       accessToken: encryptedAccessToken,
       refreshToken: encryptedRefreshToken,
       tokenType: input.tokenType,
-      expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
       externalAccountId: input.accountId || null,
       externalAccountName: input.accountName || "Jobber account",
       lastSyncAt: null,
@@ -73,7 +77,8 @@ export async function saveJobberConnection(input: {
         syncedAt: null,
         data: null,
         diagnostics: {
-          lastRefreshStatus: "not_needed"
+          lastRefreshStatus: "not_needed",
+          scopes
         }
       })
     },
@@ -83,7 +88,7 @@ export async function saveJobberConnection(input: {
       accessToken: encryptedAccessToken,
       refreshToken: encryptedRefreshToken,
       tokenType: input.tokenType,
-      expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
       externalAccountId: input.accountId || null,
       externalAccountName: input.accountName || "Jobber account",
       lastSyncAt: null,
@@ -93,7 +98,8 @@ export async function saveJobberConnection(input: {
         syncedAt: null,
         data: null,
         diagnostics: {
-          lastRefreshStatus: "not_needed"
+          lastRefreshStatus: "not_needed",
+          scopes
         }
       })
     }
@@ -143,7 +149,10 @@ export async function getJobberConnectionStatus() {
     refreshStatus: notes.diagnostics?.lastRefreshStatus || "not_needed",
     lastRefreshAttemptAt: notes.diagnostics?.lastRefreshAttemptAt || null,
     lastRefreshError: notes.diagnostics?.lastRefreshError || null,
-    lastGraphqlStatus: notes.diagnostics?.lastGraphqlStatus || null
+    lastGraphqlStatus: notes.diagnostics?.lastGraphqlStatus || null,
+    lastSyncError: notes.diagnostics?.lastSyncError || null,
+    scopes: notes.diagnostics?.scopes || getJwtScopeSummary(token?.accessToken) || null,
+    apiHealthy: !notes.diagnostics?.lastGraphqlStatus?.includes("401") && !notes.diagnostics?.lastSyncError?.includes("401")
   };
 
   console.log("[jobber:status] dashboard status fetch", status);
@@ -198,6 +207,10 @@ async function updateJobberDiagnostics(diagnostics: NonNullable<JobberConnection
 
 export async function recordJobberGraphqlStatus(status: string) {
   await updateJobberDiagnostics({ lastGraphqlStatus: status });
+}
+
+export async function recordJobberSyncError(error: string | null) {
+  await updateJobberDiagnostics({ lastSyncError: error || undefined });
 }
 
 export async function saveJobberAccountInfo(input: { accountId?: string; accountName?: string }) {
@@ -262,7 +275,7 @@ export async function getValidJobberAccessToken(options: { forceRefresh?: boolea
     const savedAt = new Date();
     const refreshedExpiresAt = refreshed.expires_in
       ? new Date(savedAt.getTime() + refreshed.expires_in * 1000).toISOString()
-      : undefined;
+      : getJwtExpiresAt(refreshed.access_token);
     const encryptedAccessToken = await encryptCookieValue(
       {
         accessToken: refreshed.access_token,
@@ -300,7 +313,8 @@ export async function getValidJobberAccessToken(options: { forceRefresh?: boolea
             ...notes.diagnostics,
             lastRefreshAttemptAt: attemptedAt,
             lastRefreshStatus: "success",
-            lastRefreshError: undefined
+            lastRefreshError: undefined,
+            scopes: getJwtScopeSummary(refreshed.access_token) || notes.diagnostics?.scopes
           }
         })
       }
@@ -323,6 +337,18 @@ export async function getValidJobberAccessToken(options: { forceRefresh?: boolea
     }
     return token.accessToken;
   }
+}
+
+export async function testStoredJobberGraphql(options: { forceRefresh?: boolean } = {}) {
+  const token = await getValidJobberAccessToken({ forceRefresh: options.forceRefresh });
+  if (!token) {
+    await recordJobberGraphqlStatus("missing_token");
+    return { ok: false, status: 0, version: null, body: "No saved Jobber access token." };
+  }
+
+  const result = await testJobberGraphql(token);
+  await recordJobberGraphqlStatus(String(result.status));
+  return result;
 }
 
 export async function getCachedJobberSnapshot<T>() {

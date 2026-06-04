@@ -33,6 +33,9 @@ type JobberStatus = {
   lastRefreshAttemptAt?: string | null;
   lastRefreshError?: string | null;
   lastGraphqlStatus?: string | null;
+  lastSyncError?: string | null;
+  scopes?: string | null;
+  apiHealthy?: boolean;
 };
 
 const pipelineLabels: Array<[keyof JobberCommandCenterData["pipeline"], string]> = [
@@ -133,11 +136,13 @@ export function JobberDashboard() {
           <div className="flex flex-wrap items-center gap-2 text-xs text-steel">
             {loading ? (
               <Badge>Checking Jobber</Badge>
-            ) : status?.connected && status.hasAccessToken ? (
+            ) : status?.connected && status.hasAccessToken && status.apiHealthy !== false ? (
               <>
                 <Badge tone="green">Jobber connected</Badge>
                 {status.accountName ? <span>{status.accountName}</span> : null}
               </>
+            ) : status?.connected && status.hasAccessToken ? (
+              <Badge tone="red">Jobber API failing</Badge>
             ) : (
               <Badge tone="yellow">Jobber disconnected</Badge>
             )}
@@ -155,8 +160,10 @@ export function JobberDashboard() {
               <Diagnostic label="Last refresh" value={status.lastRefreshAttemptAt ? new Date(status.lastRefreshAttemptAt).toLocaleString() : "Not checked"} />
               <Diagnostic label="Last sync" value={status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : "Never"} />
               <Diagnostic label="GraphQL status" value={status.lastGraphqlStatus || "Not checked"} tone={status.lastGraphqlStatus?.includes("401") ? "bad" : "normal"} />
+              <Diagnostic label="Scopes/token payload" value={status.scopes || "Not exposed by token"} />
               <Diagnostic label="Scopes needed" value="Read clients, jobs, requests, quotes, invoices" />
               <Diagnostic label="Refresh error" value={status.lastRefreshError || "None"} tone={status.lastRefreshError ? "bad" : "normal"} />
+              <Diagnostic label="Last sync error" value={status.lastSyncError || "None"} tone={status.lastSyncError ? "bad" : "normal"} />
             </div>
           ) : null}
 
@@ -210,6 +217,7 @@ export function JobberDashboard() {
           <Panel title="Jobber Pipeline">
             <div className="mb-4 flex flex-wrap gap-2 text-sm font-semibold text-pine">
               <Link href="/jobber/clients">Clients</Link>
+              <Link href="/jobber/requests">Requests</Link>
               <Link href="/jobber/quotes">Quotes</Link>
               <Link href="/jobber/invoices">Invoices</Link>
               <Link href="/jobber/jobs">Jobs</Link>

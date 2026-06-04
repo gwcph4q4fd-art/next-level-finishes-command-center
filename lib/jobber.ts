@@ -2,7 +2,7 @@ const JOBBER_AUTHORIZE_URL = "https://api.getjobber.com/api/oauth/authorize";
 const JOBBER_TOKEN_URL = "https://api.getjobber.com/api/oauth/token";
 const JOBBER_GRAPHQL_URL = "https://api.getjobber.com/api/graphql";
 const JOBBER_OAUTH_BASE_URL = "https://next-level-finishes-command-center.vercel.app";
-const JOBBER_GRAPHQL_VERSION = "2025-01-20";
+export const JOBBER_GRAPHQL_VERSION = "2025-04-16";
 
 export type JobberTokenResponse = {
   access_token: string;
@@ -54,6 +54,36 @@ export function buildJobberAuthorizeUrl(state: string) {
   url.searchParams.set("redirect_uri", getJobberRedirectUri());
   url.searchParams.set("state", state);
   return url.toString();
+}
+
+export function getJwtExpiresAt(accessToken?: string | null) {
+  if (!accessToken) return undefined;
+
+  try {
+    const payload = accessToken.split(".")[1];
+    if (!payload) return undefined;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as { exp?: number; scope?: string; scp?: string[] };
+    return decoded.exp ? new Date(decoded.exp * 1000).toISOString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function getJwtScopeSummary(accessToken?: string | null) {
+  if (!accessToken) return undefined;
+
+  try {
+    const payload = accessToken.split(".")[1];
+    if (!payload) return undefined;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as { scope?: string; scp?: string[] };
+    return decoded.scope || decoded.scp?.join(" ");
+  } catch {
+    return undefined;
+  }
 }
 
 export async function exchangeJobberCode(code: string, request: Request) {
@@ -126,7 +156,8 @@ export async function jobberGraphql<T>(accessToken: string, query: string, varia
   });
 
   if (!response.ok) {
-    throw new Error(`Jobber GraphQL request failed with status ${response.status}`);
+    const text = await response.text().catch(() => "");
+    throw new Error(`Jobber GraphQL request failed with status ${response.status}${text ? `: ${text.slice(0, 300)}` : ""}`);
   }
 
   const data = await response.json();
@@ -135,4 +166,24 @@ export async function jobberGraphql<T>(accessToken: string, query: string, varia
   }
 
   return data.data as T;
+}
+
+export async function testJobberGraphql(accessToken: string) {
+  const response = await fetch(JOBBER_GRAPHQL_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-JOBBER-GRAPHQL-VERSION": JOBBER_GRAPHQL_VERSION
+    },
+    body: JSON.stringify({ query: "query JobberAdminTest { account { id name } }" })
+  });
+  const body = await response.text().catch(() => "");
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    version: JOBBER_GRAPHQL_VERSION,
+    body: body.slice(0, 1000)
+  };
 }

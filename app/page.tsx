@@ -7,6 +7,7 @@ const navItems = [
   ["Dashboard", "/"],
   ["Agent", "/agent"],
   ["Jobber Jobs", "/jobber/jobs"],
+  ["Requests", "/jobber/requests"],
   ["Clients", "/jobber/clients"],
   ["Quotes", "/jobber/quotes"],
   ["Invoices", "/jobber/invoices"],

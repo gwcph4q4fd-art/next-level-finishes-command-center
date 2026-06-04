@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       draft: fallback,
       prompt,
-      model: "mock-local",
+      model: "local-fallback",
       logged: true,
       safety: "Draft generated only. No customer message was sent."
     });
@@ -52,9 +52,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       draft: fallback,
       prompt,
-      model: "mock-local",
+      model: "local-fallback",
       logged: true,
-      safety: "OpenAI unavailable, so a local mock draft was created. No customer message was sent."
+      safety: "OpenAI unavailable, so a local fallback draft was created. No customer message was sent."
     });
   }
 }

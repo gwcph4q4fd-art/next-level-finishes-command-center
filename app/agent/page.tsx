@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, MessageSquareText, RefreshCw, Sparkles } from "lucide-react";
 import { Badge, Panel, buttonClass } from "@/components/ui";
 import type { JobberCommandCenterData } from "@/lib/jobber-sync";
+import { businessProfile } from "@/lib/business-profile";
 
 const questions = [
   "What should I do today?",
@@ -87,7 +88,7 @@ export default function AgentPage() {
           <Badge tone="green">Draft-only actions</Badge>
         </div>
         <p className="mb-5 text-sm text-steel">
-          This agent uses the Next Level Finishes profile plus synced Jobber jobs, clients, requests, quotes, invoices, and schedule. QuickBooks, Meta, and SMS data will be added when connected.
+          This agent uses {businessProfile.business}, owner {businessProfile.owner}, services in {businessProfile.serviceAreas.join(", ")}, plus synced Jobber jobs, clients, requests, quotes, invoices, and schedule. QuickBooks, Meta, and SMS data will be added when connected.
         </p>
 
         {error ? <p className="rounded-md bg-clay/10 p-3 text-sm text-clay">{error}</p> : null}

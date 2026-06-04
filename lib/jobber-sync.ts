@@ -3,9 +3,11 @@ import {
   getValidJobberAccessToken,
   markJobberSynced,
   recordJobberGraphqlStatus,
+  recordJobberSyncError,
   saveJobberAccountInfo
 } from "@/lib/jobber-connection";
 import { fetchJobberAccount, jobberGraphql } from "@/lib/jobber";
+import { businessProfile } from "@/lib/business-profile";
 
 export const JOBBER_CACHE_MAX_AGE_MS = 15 * 60 * 1000;
 
@@ -521,10 +523,10 @@ function buildAgent(data: Omit<JobberCommandCenterData, "agent">) {
 
   const advertisingIdea =
     data.upcomingJobs.some((job) => /cabinet/i.test(job.jobTitle))
-      ? "Advertise cabinet refinishing before-and-after photos this week."
+      ? `Advertise cabinet refinishing before-and-after photos this week in ${businessProfile.serviceAreas.slice(0, 4).join(", ")}.`
       : data.upcomingJobs.some((job) => /deck|stain/i.test(job.jobTitle))
-        ? "Advertise deck staining and exterior prep while the weather window is active."
-        : "Advertise interior painting, cabinet refreshes, and fast estimate scheduling around Titusville.";
+        ? "Advertise deck staining/refinishing and exterior prep while the weather window is active."
+        : `Advertise ${businessProfile.services.slice(0, 3).join(", ")} with fast estimate scheduling around ${businessProfile.location}.`;
 
   return {
     focusToday,
@@ -569,6 +571,11 @@ export async function syncJobberCommandCenter(options: { force?: boolean; allowC
     [jobs, requests, quotes, invoices, clients] = await fetchAllSections(accessToken);
     errors = [jobs.error, requests.error, quotes.error, invoices.error, clients.error].filter(Boolean) as string[];
     await recordJobberGraphqlStatus(errors.some((error) => error.includes("status 401")) ? "401_after_refresh" : errors.length ? "partial_error_after_refresh" : "200_after_refresh");
+    if (errors.some((error) => error.includes("status 401"))) {
+      const message = "Jobber returned 401 after refreshing the access token. Reconnect Jobber or confirm the Jobber app credentials/scopes.";
+      await recordJobberSyncError(message);
+      throw new Error(message);
+    }
   } else {
     await recordJobberGraphqlStatus(errors.length ? "partial_error" : "200");
   }
@@ -621,6 +628,7 @@ export async function syncJobberCommandCenter(options: { force?: boolean; allowC
   const data: JobberCommandCenterData = { ...base, agent: buildAgent(base) };
 
   await markJobberSynced(data);
+  await recordJobberSyncError(null);
   return data;
 }
 

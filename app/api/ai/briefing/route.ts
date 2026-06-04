@@ -1,32 +1,39 @@
 import { NextResponse } from "next/server";
-import { bills, cashSummary, invoices, leads, schedule } from "@/lib/mock-data";
-import { currency } from "@/lib/utils";
+import { getJobberCommandCenterSnapshot, syncJobberCommandCenter } from "@/lib/jobber-sync";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const newLeads = leads.filter((lead) => lead.status === "New");
-  const followUps = leads.filter((lead) => lead.status === "Quoted");
-  const billTotal = bills.reduce((total, bill) => total + bill.amount, 0);
-  const unpaidTotal = invoices.reduce((total, invoice) => total + invoice.amount, 0);
+  let data = (await getJobberCommandCenterSnapshot())?.data;
+
+  if (!data) {
+    try {
+      data = await syncJobberCommandCenter({ allowCache: true });
+    } catch {
+      data = undefined;
+    }
+  }
+
+  const jobsToday = (data?.upcomingJobs || [])
+    .filter((job) => job.startDate && new Date(job.startDate).toDateString() === new Date().toDateString())
+    .map((job) => `${job.jobTitle} - ${job.clientName}`);
 
   return NextResponse.json({
     briefing: {
-      cashAvailable: currency(cashSummary.available),
-      billsDue: `${currency(billTotal)} due soon`,
-      jobsToday: schedule.filter((item) => item.type === "Job").map((item) => `${item.time} - ${item.title}`),
-      leadsNeedingResponse: newLeads.map((lead) => lead.name),
-      estimatesToFollowUp: followUps.map((lead) => lead.name),
-      revenueNeededThisWeek: currency(cashSummary.revenueNeeded),
-      biggestRisk:
-        unpaidTotal > cashSummary.revenueNeeded
-          ? "Cash is tied up in unpaid deposits and invoices, so collections should happen before new material spending."
-          : "The week needs more booked revenue, so follow-ups and fast lead response matter most.",
-      topActions: [
-        "Reply to every new lead before lunch.",
-        "Follow up on quoted exterior work with a clear yes/no next step.",
-        "Collect unpaid deposit before ordering additional job materials."
+      cashAvailable: "QuickBooks not connected yet",
+      billsDue: "QuickBooks not connected yet",
+      jobsToday,
+      leadsNeedingResponse: (data?.requests || []).filter((item) => item.reason).map((item) => item.title),
+      estimatesToFollowUp: (data?.quotes || []).filter((item) => item.reason).map((item) => item.title),
+      revenueNeededThisWeek: "QuickBooks not connected yet",
+      biggestRisk: data?.agent.riskyJobs[0] || "No live Jobber data synced yet. Connect/sync Jobber before relying on this briefing.",
+      topActions: data?.agent.focusToday || [
+        "Sync Jobber.",
+        "Connect QuickBooks when ready for cash and P&L visibility.",
+        "Add Meta/SMS later for lead response automation."
       ]
     },
     logged: true,
-    safety: "Briefing generated from mock/read-only data. No financial systems were changed."
+    safety: "Briefing generated from live synced Jobber data when available. No systems were changed."
   });
 }

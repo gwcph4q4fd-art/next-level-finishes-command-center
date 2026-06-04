@@ -5,7 +5,8 @@ const publicPaths = [
   "/login",
   "/api/auth/login",
   "/api/integrations/jobber/connect",
-  "/api/integrations/jobber/callback"
+  "/api/integrations/jobber/callback",
+  "/api/cron/jobber-sync"
 ];
 
 export async function middleware(request: NextRequest) {

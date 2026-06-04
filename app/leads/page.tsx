@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { MessageSquarePlus, Plus, ShieldCheck, Sparkles } from "lucide-react";
 import { Badge, Field, Panel, buttonClass, inputClass } from "@/components/ui";
-import { leads as mockLeads } from "@/lib/mock-data";
 import type { JobType, Lead, LeadStatus } from "@/lib/types";
 
 const statuses: LeadStatus[] = ["New", "Contacted", "Estimate Scheduled", "Quoted", "Won", "Lost"];
@@ -18,8 +17,8 @@ const jobTypes: JobType[] = [
 ];
 
 export default function LeadInboxPage() {
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
-  const [selectedId, setSelectedId] = useState(mockLeads[0]?.id);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [selectedId, setSelectedId] = useState<string | undefined>();
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const selected = useMemo(() => leads.find((lead) => lead.id === selectedId) || leads[0], [leads, selectedId]);
@@ -79,7 +78,7 @@ export default function LeadInboxPage() {
 
         <Panel title="Inbox">
           <div className="grid gap-3">
-            {leads.map((lead) => (
+            {leads.length ? leads.map((lead) => (
               <button
                 key={lead.id}
                 onClick={() => {
@@ -95,7 +94,11 @@ export default function LeadInboxPage() {
                 <p className="mt-1 text-sm text-steel">{lead.jobType} - {lead.location}</p>
                 <p className="mt-2 line-clamp-2 text-sm text-ink">{lead.message}</p>
               </button>
-            ))}
+            )) : (
+              <p className="rounded-md border border-dashed border-ink/20 p-4 text-sm text-steel">
+                No manual leads yet. Live Jobber requests are shown under Jobber Requests. Meta, website, and SMS leads are not connected yet.
+              </p>
+            )}
           </div>
         </Panel>
       </section>

@@ -33,7 +33,7 @@ export default function BriefingPage() {
       <header className="mb-6">
         <a href="/" className="text-sm font-semibold text-pine">Dashboard</a>
         <h1 className="mt-2 text-3xl font-bold text-ink">Daily Briefing</h1>
-        <p className="mt-2 text-sm text-steel">A draft business summary from mock/read-only data. It does not change accounting, scheduling, or customer systems.</p>
+        <p className="mt-2 text-sm text-steel">A draft business summary from live synced Jobber data when available. It does not change accounting, scheduling, or customer systems.</p>
       </header>
 
       <Panel title="Today’s Briefing" action={<Badge tone="green">Draft logged</Badge>}>

@@ -7,13 +7,14 @@ import { Badge, Panel, buttonClass } from "@/components/ui";
 import { currency } from "@/lib/utils";
 import type { JobberCommandCenterData, JobberJobCard, JobberPipelineItem } from "@/lib/jobber-sync";
 
-type Collection = "jobs" | "clients" | "quotes" | "invoices";
+type Collection = "jobs" | "clients" | "quotes" | "invoices" | "requests";
 
 const titles: Record<Collection, string> = {
   jobs: "Jobber Jobs",
   clients: "Jobber Clients",
   quotes: "Jobber Quotes",
-  invoices: "Jobber Invoices"
+  invoices: "Jobber Invoices",
+  requests: "Jobber Requests / Leads"
 };
 
 export function JobberListPage({ collection }: { collection: Collection }) {
@@ -44,6 +45,7 @@ export function JobberListPage({ collection }: { collection: Collection }) {
     if (collection === "jobs") return data.activeJobs;
     if (collection === "clients") return data.clients;
     if (collection === "quotes") return data.quotes;
+    if (collection === "requests") return data.requests;
     return data.invoices;
   }, [collection, data]);
 
