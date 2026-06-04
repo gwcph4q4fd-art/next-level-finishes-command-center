@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Badge, Panel, buttonClass } from "@/components/ui";
 
@@ -27,6 +27,13 @@ type JobberData = {
   followUps: JobberSection;
 };
 
+type JobberStatus = {
+  connected: boolean;
+  hasAccessToken: boolean;
+  expiresAt?: string | null;
+  accountName?: string;
+};
+
 const sections: Array<[keyof JobberData, string]> = [
   ["schedule", "Upcoming Schedule"],
   ["activeJobs", "Active Jobs"],
@@ -36,13 +43,39 @@ const sections: Array<[keyof JobberData, string]> = [
 ];
 
 export function JobberDashboard() {
+  const [status, setStatus] = useState<JobberStatus | null>(null);
+  const [statusLoading, setStatusLoading] = useState(true);
   const [data, setData] = useState<JobberData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  async function loadStatus() {
+    setStatusLoading(true);
+    const response = await fetch("/api/integrations/jobber/status", { cache: "no-store" });
+    const nextStatus = await response.json();
+    setStatus(nextStatus);
+    setStatusLoading(false);
+    return nextStatus as JobberStatus;
+  }
+
+  useEffect(() => {
+    loadStatus().catch(() => {
+      setStatus({ connected: false, hasAccessToken: false });
+      setStatusLoading(false);
+    });
+  }, []);
+
   async function syncJobber() {
     setLoading(true);
     setError("");
+    const backendStatus = await loadStatus();
+
+    if (!backendStatus.connected || !backendStatus.hasAccessToken) {
+      setError("Jobber is disconnected according to the backend status check.");
+      setData(null);
+      setLoading(false);
+      return;
+    }
 
     const response = await fetch("/api/integrations/jobber/sync", { cache: "no-store" });
     const nextData = await response.json();
@@ -68,6 +101,20 @@ export function JobberDashboard() {
         </button>
       }
     >
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-steel">
+        {statusLoading ? (
+          <Badge>Checking status</Badge>
+        ) : status?.connected && status.hasAccessToken ? (
+          <>
+            <Badge tone="green">Jobber connected</Badge>
+            {status.accountName ? <span>{status.accountName}</span> : null}
+            {status.expiresAt ? <span>Token expires {new Date(status.expiresAt).toLocaleString()}</span> : null}
+          </>
+        ) : (
+          <Badge tone="yellow">Jobber disconnected</Badge>
+        )}
+      </div>
+
       {!data && !error ? (
         <p className="rounded-md border border-dashed border-ink/20 p-5 text-sm text-steel">
           Click Sync Jobber to pull read-only schedule, jobs, quotes, invoices, and follow-up candidates from Jobber.
@@ -121,4 +168,3 @@ function JobberList({ title, section }: { title: string; section: JobberSection 
     </section>
   );
 }
-

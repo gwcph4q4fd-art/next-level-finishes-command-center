@@ -1,7 +1,8 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { jobberGraphql, JOBBER_TOKEN_COOKIE, type StoredJobberToken } from "@/lib/jobber";
-import { decryptCookieValue } from "@/lib/secure-cookie";
+import { getStoredJobberAccessToken, markJobberSynced } from "@/lib/jobber-connection";
+import { jobberGraphql } from "@/lib/jobber";
+
+export const dynamic = "force-dynamic";
 
 type ClientName = {
   firstName?: string | null;
@@ -46,12 +47,11 @@ async function section<T>(fn: () => Promise<T[]>): Promise<JobberSection<T>> {
 }
 
 export async function GET() {
-  const rawToken = cookies().get(JOBBER_TOKEN_COOKIE)?.value;
-  const token = rawToken && process.env.AUTH_SECRET
-    ? await decryptCookieValue<StoredJobberToken>(rawToken, process.env.AUTH_SECRET)
-    : null;
+  console.log("[jobber:sync] sync request started");
+  const accessToken = await getStoredJobberAccessToken();
 
-  if (!token?.accessToken) {
+  if (!accessToken) {
+    console.log("[jobber:sync] no saved Jobber access token");
     return NextResponse.json({ connected: false, error: "Jobber is not connected." }, { status: 401 });
   }
 
@@ -59,7 +59,7 @@ export async function GET() {
     const data = await jobberGraphql<{
       jobs?: { nodes?: Array<{ id: string; jobNumber?: number | string; title?: string | null; jobStatus?: string; client?: ClientName }> };
     }>(
-      token.accessToken,
+      accessToken,
       `query DashboardJobs {
         jobs {
           nodes {
@@ -85,7 +85,7 @@ export async function GET() {
     const data = await jobberGraphql<{
       quotes?: { nodes?: Array<{ id: string; quoteNumber?: number | string; title?: string | null; quoteStatus?: string; client?: ClientName }> };
     }>(
-      token.accessToken,
+      accessToken,
       `query DashboardQuotes {
         quotes {
           nodes {
@@ -111,7 +111,7 @@ export async function GET() {
     const data = await jobberGraphql<{
       invoices?: { nodes?: Array<{ id: string; invoiceNumber?: number | string; subject?: string | null; invoiceStatus?: string; client?: ClientName }> };
     }>(
-      token.accessToken,
+      accessToken,
       `query DashboardInvoices {
         invoices {
           nodes {
@@ -147,7 +147,7 @@ export async function GET() {
         }>;
       };
     }>(
-      token.accessToken,
+      accessToken,
       `query DashboardSchedule {
         jobs {
           nodes {
@@ -184,7 +184,7 @@ export async function GET() {
     const data = await jobberGraphql<{
       clients?: { nodes?: Array<{ id: string; firstName?: string; lastName?: string; companyName?: string; updatedAt?: string; createdAt?: string }> };
     }>(
-      token.accessToken,
+      accessToken,
       `query DashboardClients {
         clients {
           nodes {
@@ -217,6 +217,14 @@ export async function GET() {
     followUps
   };
 
+  await markJobberSynced();
+  console.log("[jobber:sync] sync request completed", {
+    schedule: result.schedule.items.length,
+    activeJobs: result.activeJobs.items.length,
+    openQuotes: result.openQuotes.items.length,
+    recentInvoices: result.recentInvoices.items.length,
+    followUps: result.followUps.items.length
+  });
+
   return NextResponse.json(result);
 }
-
