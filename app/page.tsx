@@ -6,6 +6,7 @@ import {
   Target,
   WalletCards
 } from "lucide-react";
+import { JobberDashboard } from "@/components/jobber-dashboard";
 import { Badge, Panel } from "@/components/ui";
 import { bills, cashSummary, draftLogs, integrations, invoices, leads, schedule } from "@/lib/mock-data";
 import { currency } from "@/lib/utils";
@@ -96,6 +97,10 @@ export default function DashboardPage() {
                 ))}
               </div>
             </Panel>
+          </section>
+
+          <section className="mt-6">
+            <JobberDashboard />
           </section>
 
           <section className="mt-6 grid gap-6 xl:grid-cols-3">

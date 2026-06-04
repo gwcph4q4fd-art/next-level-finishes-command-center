@@ -2,6 +2,7 @@ const JOBBER_AUTHORIZE_URL = "https://api.getjobber.com/api/oauth/authorize";
 const JOBBER_TOKEN_URL = "https://api.getjobber.com/api/oauth/token";
 const JOBBER_GRAPHQL_URL = "https://api.getjobber.com/api/graphql";
 const JOBBER_OAUTH_BASE_URL = "https://next-level-finishes-command-center.vercel.app";
+const JOBBER_GRAPHQL_VERSION = "2025-01-20";
 
 export type JobberTokenResponse = {
   access_token: string;
@@ -78,24 +79,36 @@ export async function exchangeJobberCode(code: string, request: Request) {
 }
 
 export async function fetchJobberAccount(accessToken: string) {
+  const data = await jobberGraphql<{ account?: { id?: string; name?: string } }>(
+    accessToken,
+    `query AccountStatus { account { id name } }`
+  );
+
+  return {
+    id: data?.account?.id,
+    name: data?.account?.name
+  };
+}
+
+export async function jobberGraphql<T>(accessToken: string, query: string, variables?: Record<string, unknown>) {
   const response = await fetch(JOBBER_GRAPHQL_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "X-JOBBER-GRAPHQL-VERSION": JOBBER_GRAPHQL_VERSION
     },
-    body: JSON.stringify({
-      query: `query AccountStatus { account { id name } }`
-    })
+    body: JSON.stringify({ query, variables })
   });
 
   if (!response.ok) {
-    throw new Error(`Jobber account query failed with status ${response.status}`);
+    throw new Error(`Jobber GraphQL request failed with status ${response.status}`);
   }
 
   const data = await response.json();
-  return {
-    id: data?.data?.account?.id as string | undefined,
-    name: data?.data?.account?.name as string | undefined
-  };
+  if (data.errors?.length) {
+    throw new Error(data.errors.map((error: { message?: string }) => error.message).filter(Boolean).join("; "));
+  }
+
+  return data.data as T;
 }
