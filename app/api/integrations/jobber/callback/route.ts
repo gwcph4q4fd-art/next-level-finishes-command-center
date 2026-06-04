@@ -20,7 +20,14 @@ export async function GET(request: Request) {
 
   try {
     const token = await exchangeJobberCode(code, request);
-    const account = await fetchJobberAccount(token.access_token);
+    let account: { id?: string; name?: string } = {};
+
+    try {
+      account = await fetchJobberAccount(token.access_token);
+    } catch {
+      account = {};
+    }
+
     const savedAt = new Date();
     const expiresAt = token.expires_in ? new Date(savedAt.getTime() + token.expires_in * 1000).toISOString() : undefined;
     const encryptedToken = await encryptCookieValue(
