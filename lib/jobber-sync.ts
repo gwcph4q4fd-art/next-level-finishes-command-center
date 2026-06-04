@@ -1,5 +1,11 @@
-import { getCachedJobberSnapshot, getStoredJobberAccessToken, markJobberSynced } from "@/lib/jobber-connection";
-import { jobberGraphql } from "@/lib/jobber";
+import {
+  getCachedJobberSnapshot,
+  getValidJobberAccessToken,
+  markJobberSynced,
+  recordJobberGraphqlStatus,
+  saveJobberAccountInfo
+} from "@/lib/jobber-connection";
+import { fetchJobberAccount, jobberGraphql } from "@/lib/jobber";
 
 export const JOBBER_CACHE_MAX_AGE_MS = 15 * 60 * 1000;
 
@@ -536,21 +542,44 @@ export async function syncJobberCommandCenter(options: { force?: boolean; allowC
     return { ...cached.data, source: "cache" as const, stale: false };
   }
 
-  const accessToken = await getStoredJobberAccessToken();
+  let accessToken = await getValidJobberAccessToken();
   if (!accessToken) {
     if (cached?.data && options.allowCache) return { ...cached.data, source: "cache" as const, stale: true };
     throw new Error("Jobber is not connected.");
   }
 
-  const [jobs, requests, quotes, invoices, clients] = await Promise.all([
-    safeSection("Jobs", () => fetchJobs(accessToken)),
-    safeSection("Requests", () => fetchRequests(accessToken)),
-    safeSection("Quotes", () => fetchQuotes(accessToken)),
-    safeSection("Invoices", () => fetchInvoices(accessToken)),
-    safeSection("Clients", () => fetchClients(accessToken))
-  ]);
+  async function fetchAllSections(token: string) {
+    return Promise.all([
+      safeSection("Jobs", () => fetchJobs(token)),
+      safeSection("Requests", () => fetchRequests(token)),
+      safeSection("Quotes", () => fetchQuotes(token)),
+      safeSection("Invoices", () => fetchInvoices(token)),
+      safeSection("Clients", () => fetchClients(token))
+    ]);
+  }
 
-  const errors = [jobs.error, requests.error, quotes.error, invoices.error, clients.error].filter(Boolean) as string[];
+  let [jobs, requests, quotes, invoices, clients] = await fetchAllSections(accessToken);
+  let errors = [jobs.error, requests.error, quotes.error, invoices.error, clients.error].filter(Boolean) as string[];
+  const hasUnauthorized = errors.some((error) => error.includes("status 401"));
+
+  if (hasUnauthorized) {
+    await recordJobberGraphqlStatus("401");
+    accessToken = await getValidJobberAccessToken({ forceRefresh: true });
+    if (!accessToken) throw new Error("Jobber token refresh failed. Reconnect Jobber.");
+    [jobs, requests, quotes, invoices, clients] = await fetchAllSections(accessToken);
+    errors = [jobs.error, requests.error, quotes.error, invoices.error, clients.error].filter(Boolean) as string[];
+    await recordJobberGraphqlStatus(errors.some((error) => error.includes("status 401")) ? "401_after_refresh" : errors.length ? "partial_error_after_refresh" : "200_after_refresh");
+  } else {
+    await recordJobberGraphqlStatus(errors.length ? "partial_error" : "200");
+  }
+
+  try {
+    const account = await fetchJobberAccount(accessToken);
+    await saveJobberAccountInfo({ accountId: account.id, accountName: account.name });
+  } catch (error) {
+    console.warn("[jobber:sync] account diagnostic fetch failed", error);
+  }
+
   const upcomingJobs = jobs.items
     .filter((job) => !job.startDate || new Date(job.startDate).getTime() >= Date.now() - 24 * 60 * 60 * 1000)
     .sort((a, b) => String(a.startDate || "").localeCompare(String(b.startDate || "")))

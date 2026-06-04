@@ -9,6 +9,7 @@ export type JobberTokenResponse = {
   refresh_token?: string;
   token_type?: string;
   expires_in?: number;
+  warning?: string;
 };
 
 export type StoredJobberToken = {
@@ -73,6 +74,29 @@ export async function exchangeJobberCode(code: string, request: Request) {
 
   if (!response.ok) {
     throw new Error(`Jobber token exchange failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as JobberTokenResponse;
+}
+
+export async function refreshJobberToken(refreshToken: string) {
+  const { clientId, clientSecret } = getJobberConfig();
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: "refresh_token",
+    refresh_token: refreshToken
+  });
+
+  const response = await fetch(JOBBER_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Jobber token refresh failed with status ${response.status}${text ? `: ${text}` : ""}`);
   }
 
   return (await response.json()) as JobberTokenResponse;

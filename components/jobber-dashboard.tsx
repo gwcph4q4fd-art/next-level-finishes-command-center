@@ -21,10 +21,18 @@ import type { JobberCommandCenterData, JobberJobCard, JobberPipelineItem } from 
 type JobberStatus = {
   connected: boolean;
   hasAccessToken: boolean;
+  hasRefreshToken?: boolean;
   accountName?: string;
+  accountId?: string;
+  expiresAt?: string | null;
+  tokenExpired?: boolean | null;
   lastSyncAt?: string | null;
   cacheSyncedAt?: string | null;
   cacheStale?: boolean;
+  refreshStatus?: string;
+  lastRefreshAttemptAt?: string | null;
+  lastRefreshError?: string | null;
+  lastGraphqlStatus?: string | null;
 };
 
 const pipelineLabels: Array<[keyof JobberCommandCenterData["pipeline"], string]> = [
@@ -136,6 +144,21 @@ export function JobberDashboard() {
             {data?.syncedAt ? <span>Last synced {new Date(data.syncedAt).toLocaleString()}</span> : null}
             {data?.source === "cache" ? <Badge tone="blue">Cached</Badge> : null}
           </div>
+
+          {status ? (
+            <div className="grid gap-2 rounded-md border border-ink/10 bg-primer/50 p-3 text-xs text-steel sm:grid-cols-2 xl:grid-cols-5">
+              <Diagnostic label="Connected" value={status.connected ? "Yes" : "No"} />
+              <Diagnostic label="Token expires" value={status.expiresAt ? new Date(status.expiresAt).toLocaleString() : "Missing"} tone={status.tokenExpired ? "bad" : "normal"} />
+              <Diagnostic label="Refresh token" value={status.hasRefreshToken ? "Saved" : "Missing"} tone={status.hasRefreshToken ? "normal" : "bad"} />
+              <Diagnostic label="API account id" value={status.accountId || "Missing"} />
+              <Diagnostic label="Refresh status" value={status.refreshStatus || "Not checked"} tone={status.refreshStatus === "failed" || status.refreshStatus === "missing_refresh_token" ? "bad" : "normal"} />
+              <Diagnostic label="Last refresh" value={status.lastRefreshAttemptAt ? new Date(status.lastRefreshAttemptAt).toLocaleString() : "Not checked"} />
+              <Diagnostic label="Last sync" value={status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : "Never"} />
+              <Diagnostic label="GraphQL status" value={status.lastGraphqlStatus || "Not checked"} tone={status.lastGraphqlStatus?.includes("401") ? "bad" : "normal"} />
+              <Diagnostic label="Scopes needed" value="Read clients, jobs, requests, quotes, invoices" />
+              <Diagnostic label="Refresh error" value={status.lastRefreshError || "None"} tone={status.lastRefreshError ? "bad" : "normal"} />
+            </div>
+          ) : null}
 
           {error ? <p className="rounded-md bg-clay/10 p-3 text-sm text-clay">{error}</p> : null}
 
@@ -256,6 +279,15 @@ function Fact({ icon, label, value }: { icon: React.ReactNode; label: string; va
         <p className="text-xs font-semibold uppercase text-steel">{label}</p>
         <p className="break-words text-sm text-ink">{value}</p>
       </div>
+    </div>
+  );
+}
+
+function Diagnostic({ label, value, tone = "normal" }: { label: string; value: string; tone?: "normal" | "bad" }) {
+  return (
+    <div className="min-w-0">
+      <p className="font-semibold uppercase text-steel">{label}</p>
+      <p className={tone === "bad" ? "break-words font-semibold text-clay" : "break-words text-ink"}>{value}</p>
     </div>
   );
 }
