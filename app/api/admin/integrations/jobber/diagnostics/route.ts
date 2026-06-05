@@ -6,17 +6,21 @@ import { getJobberCommandCenterSnapshot } from "@/lib/jobber-sync";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const status = await getJobberConnectionStatus();
-  const snapshot = await getJobberCommandCenterSnapshot();
   const sample = await testStoredJobberGraphql().catch((error) => ({
     ok: false,
     status: 0,
     version: JOBBER_GRAPHQL_VERSION,
     body: error instanceof Error ? error.message : String(error)
   }));
+  const status = await getJobberConnectionStatus();
+  const snapshot = await getJobberCommandCenterSnapshot();
 
   return NextResponse.json({
-    status,
+    status: {
+      ...status,
+      connected: Boolean(status.connected && sample.ok),
+      apiHealthy: Boolean(sample.ok)
+    },
     config: {
       configured: getJobberConfig().isConfigured,
       redirectUri: getJobberRedirectUri(),

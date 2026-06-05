@@ -2,6 +2,7 @@ import {
   getCachedJobberSnapshot,
   getValidJobberAccessToken,
   markJobberSynced,
+  markJobberNeedsReauthorization,
   recordJobberGraphqlStatus,
   recordJobberSyncError,
   saveJobberAccountInfo
@@ -574,6 +575,7 @@ export async function syncJobberCommandCenter(options: { force?: boolean; allowC
     if (errors.some((error) => error.includes("status 401"))) {
       const message = "Jobber returned 401 after refreshing the access token. Reconnect Jobber or confirm the Jobber app credentials/scopes.";
       await recordJobberSyncError(message);
+      await markJobberNeedsReauthorization(message);
       throw new Error(message);
     }
   } else {

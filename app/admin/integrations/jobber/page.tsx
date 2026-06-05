@@ -82,6 +82,9 @@ export default function JobberAdminPage() {
             <ShieldAlert className="h-4 w-4" />
             {testing ? "Testing..." : "Test token refresh"}
           </button>
+          <a className={buttonClass} href="/api/integrations/jobber/connect">
+            Reauthorize Jobber
+          </a>
         </div>
       </div>
 
@@ -126,6 +129,16 @@ export default function JobberAdminPage() {
             <Panel title="Sample GraphQL Account Test">
               <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-ink p-4 text-xs text-white">{JSON.stringify(diagnostics.sampleGraphql, null, 2)}</pre>
             </Panel>
+
+            {!diagnostics.sampleGraphql.ok ? (
+              <Panel title="Exact Failure Reason">
+                <p className="rounded-md bg-clay/10 p-3 text-sm text-clay">
+                  {diagnostics.sampleGraphql.status === 401
+                    ? `Jobber returned 401. ${diagnostics.sampleGraphql.body || "No response body was returned."}`
+                    : diagnostics.sampleGraphql.body || "GraphQL test failed without a response body."}
+                </p>
+              </Panel>
+            ) : null}
 
             {testResult ? (
               <Panel title="Refresh Token Test Result">

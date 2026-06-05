@@ -213,6 +213,38 @@ export async function recordJobberSyncError(error: string | null) {
   await updateJobberDiagnostics({ lastSyncError: error || undefined });
 }
 
+export async function markJobberNeedsReauthorization(reason: string) {
+  await prisma.integrationConnection.update({
+    where: {
+      provider_accountKey: {
+        provider: IntegrationProvider.JOBBER,
+        accountKey: OWNER_ACCOUNT_KEY
+      }
+    },
+    data: {
+      status: "Needs reauthorization"
+    }
+  });
+  await updateJobberDiagnostics({
+    lastGraphqlStatus: "needs_reauthorization",
+    lastSyncError: reason
+  });
+}
+
+export async function markJobberApiHealthy() {
+  await prisma.integrationConnection.update({
+    where: {
+      provider_accountKey: {
+        provider: IntegrationProvider.JOBBER,
+        accountKey: OWNER_ACCOUNT_KEY
+      }
+    },
+    data: {
+      status: "Connected"
+    }
+  });
+}
+
 export async function saveJobberAccountInfo(input: { accountId?: string; accountName?: string }) {
   if (!input.accountId && !input.accountName) return;
 
@@ -346,8 +378,35 @@ export async function testStoredJobberGraphql(options: { forceRefresh?: boolean 
     return { ok: false, status: 0, version: null, body: "No saved Jobber access token." };
   }
 
-  const result = await testJobberGraphql(token);
+  let result = await testJobberGraphql(token);
+
+  if (result.status === 401 && !options.forceRefresh) {
+    try {
+      const refreshedToken = await getValidJobberAccessToken({ forceRefresh: true });
+      if (refreshedToken) {
+        result = await testJobberGraphql(refreshedToken);
+      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      await markJobberNeedsReauthorization(`Refresh failed after Jobber GraphQL 401: ${reason}`);
+      return {
+        ok: false,
+        status: 401,
+        version: result.version,
+        body: `GraphQL returned 401 and refresh failed. ${reason}`
+      };
+    }
+  }
+
   await recordJobberGraphqlStatus(String(result.status));
+
+  if (result.ok) {
+    await markJobberApiHealthy();
+    await recordJobberSyncError(null);
+  } else if (result.status === 401) {
+    await markJobberNeedsReauthorization(`Jobber GraphQL account test returned 401. Response: ${result.body || "No response body."}`);
+  }
+
   return result;
 }
 
