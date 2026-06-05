@@ -56,3 +56,6 @@ OPENAI_API_KEY=
 3. Import the GitHub repo into Vercel.
 4. Deploy with default Next.js settings.
 5. Confirm the public URL loads the dashboard.
+
+
+Deployment refresh: force Vercel production redeploy for Jobber diagnostics.
