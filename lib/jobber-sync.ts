@@ -57,7 +57,6 @@ type VisitNode = {
 
 type MoneyAmounts = {
   total?: number | null;
-  outstanding?: number | null;
   paymentsTotal?: number | null;
   depositAmount?: number | null;
 };
@@ -252,7 +251,7 @@ async function fetchJobs(accessToken: string) {
           property { jobberWebUri address { street1 street2 city province postalCode } }
           quote { id title quoteStatus jobberWebUri amounts { total } }
           visits(first: 5) { nodes { id title visitStatus startAt endAt } }
-          invoices(first: 5) { nodes { id invoiceStatus dueDate jobberWebUri amounts { total outstanding paymentsTotal } } }
+          invoices(first: 5) { nodes { id invoiceStatus dueDate jobberWebUri amounts { total paymentsTotal } } }
         }
       }
     }`
@@ -409,7 +408,7 @@ async function fetchInvoices(accessToken: string) {
           jobberWebUri
           dueDate
           updatedAt
-          amounts { total outstanding paymentsTotal }
+          amounts { total paymentsTotal }
           client { id name companyName firstName lastName }
         }
       }
@@ -422,10 +421,10 @@ async function fetchInvoices(accessToken: string) {
       title: invoice.subject || `Invoice #${invoice.invoiceNumber || invoice.id}`,
       client: invoice.client,
       status: invoice.invoiceStatus,
-      amount: invoice.amounts?.outstanding ?? invoice.amounts?.total,
+      amount: invoice.amounts?.total,
       date: invoice.dueDate || invoice.updatedAt,
       jobberWebUri: invoice.jobberWebUri,
-      reason: Number(invoice.amounts?.outstanding || 0) > 0 ? "Money is still outstanding." : undefined,
+      reason: String(invoice.invoiceStatus || "").toLowerCase().includes("paid") ? undefined : "Review invoice payment/deposit status in Jobber.",
       updatedAt: invoice.updatedAt
     })
   );
