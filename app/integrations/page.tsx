@@ -39,10 +39,25 @@ export default function IntegrationsPage() {
   const [jobberStatus, setJobberStatus] = useState<{
     connected: boolean;
     configured: boolean;
+    apiHealthy?: boolean;
+    hasAccessToken?: boolean;
+    hasRefreshToken?: boolean;
+    expiresAt?: string | null;
+    lastSyncAt?: string | null;
+    lastSyncError?: string | null;
+    refreshStatus?: string | null;
+    lastRefreshError?: string | null;
+    lastGraphqlStatus?: string | null;
     accountName?: string;
     accountId?: string;
     connectedAt?: string;
     redirectUri?: string;
+    sampleGraphql?: {
+      ok: boolean;
+      status: number;
+      version?: string | null;
+      body?: string;
+    };
   } | null>(null);
 
   useEffect(() => {
@@ -68,7 +83,8 @@ export default function IntegrationsPage() {
             <div className="grid gap-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone="blue">{integration.mode}</Badge>
-                {integration.name === "Jobber" && jobberStatus?.connected ? <Badge tone="green">Connected</Badge> : null}
+                {integration.name === "Jobber" && jobberStatus?.connected ? <Badge tone="green">API connected</Badge> : null}
+                {integration.name === "Jobber" && jobberStatus && !jobberStatus.connected && jobberStatus.hasAccessToken ? <Badge tone="red">API failing</Badge> : null}
                 {integration.name === "Jobber" && jobberStatus && !jobberStatus.configured ? <Badge tone="yellow">Needs credentials</Badge> : null}
               </div>
               <div>
@@ -110,10 +126,25 @@ function JobberSetup({
   status: {
     connected: boolean;
     configured: boolean;
+    apiHealthy?: boolean;
+    hasAccessToken?: boolean;
+    hasRefreshToken?: boolean;
+    expiresAt?: string | null;
+    lastSyncAt?: string | null;
+    lastSyncError?: string | null;
+    refreshStatus?: string | null;
+    lastRefreshError?: string | null;
+    lastGraphqlStatus?: string | null;
     accountName?: string;
     accountId?: string;
     connectedAt?: string;
     redirectUri?: string;
+    sampleGraphql?: {
+      ok: boolean;
+      status: number;
+      version?: string | null;
+      body?: string;
+    };
   } | null;
 }) {
   return (
@@ -124,12 +155,39 @@ function JobberSetup({
           {!status
             ? "Checking Jobber setup..."
             : status.connected
-              ? `Connected to ${status.accountName || "Jobber"}`
+              ? `API verified for ${status.accountName || "Jobber"}`
               : status.configured
-                ? "Ready to authorize with Jobber."
+                ? status.hasAccessToken
+                  ? "Jobber has saved tokens, but the API test is failing."
+                  : "Ready to authorize with Jobber."
                 : "Add Jobber credentials in Vercel before connecting."}
         </p>
       </div>
+
+      {status ? (
+        <div className="grid gap-2 rounded-md bg-primer/60 p-3 text-xs text-steel">
+          <Diag label="GraphQL test" value={status.sampleGraphql ? `${status.sampleGraphql.status} ${status.sampleGraphql.ok ? "OK" : "FAILED"}` : "Not checked"} bad={!status.sampleGraphql?.ok} />
+          <Diag label="Access token" value={status.hasAccessToken ? "Saved" : "Missing"} bad={!status.hasAccessToken} />
+          <Diag label="Refresh token" value={status.hasRefreshToken ? "Saved" : "Missing"} bad={!status.hasRefreshToken} />
+          <Diag label="Token expires" value={status.expiresAt ? new Date(status.expiresAt).toLocaleString() : "Missing"} bad={!status.expiresAt} />
+          <Diag label="API account id" value={status.accountId || "Missing"} bad={!status.accountId} />
+          <Diag label="Last sync" value={status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : "Never"} />
+          <Diag label="Last sync error" value={status.lastSyncError || "None"} bad={Boolean(status.lastSyncError)} />
+          <Diag label="Refresh status" value={status.refreshStatus || "Not checked"} bad={status.refreshStatus === "failed" || status.refreshStatus === "missing_refresh_token"} />
+          <Diag label="Refresh error" value={status.lastRefreshError || "None"} bad={Boolean(status.lastRefreshError)} />
+          <Diag label="Last GraphQL status" value={status.lastGraphqlStatus || "Not checked"} bad={status.lastGraphqlStatus?.includes("401")} />
+          {!status.sampleGraphql?.ok ? (
+            <div>
+              <p className="font-semibold uppercase text-steel">Exact failure reason</p>
+              <p className="break-words font-semibold text-clay">
+                {status.sampleGraphql?.status === 401
+                  ? `Jobber returned 401. ${status.sampleGraphql.body || "No response body returned."}`
+                  : status.sampleGraphql?.body || "GraphQL test has not succeeded yet."}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {status?.redirectUri ? (
         <div>
@@ -145,11 +203,20 @@ function JobberSetup({
       <a
         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white transition hover:bg-pine/90 aria-disabled:pointer-events-none aria-disabled:opacity-60"
         href="/api/integrations/jobber/connect"
-        aria-disabled={!status?.configured || status?.connected}
+        aria-disabled={!status?.configured}
       >
         <ExternalLink className="h-4 w-4" />
-        {status?.connected ? "Jobber Connected" : "Connect Jobber"}
+        {status?.hasAccessToken ? "Reauthorize Jobber" : "Connect Jobber"}
       </a>
+    </div>
+  );
+}
+
+function Diag({ label, value, bad = false }: { label: string; value: string; bad?: boolean }) {
+  return (
+    <div>
+      <p className="font-semibold uppercase text-steel">{label}</p>
+      <p className={bad ? "break-words font-semibold text-clay" : "break-words text-ink"}>{value}</p>
     </div>
   );
 }
