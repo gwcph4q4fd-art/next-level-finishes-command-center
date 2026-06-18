@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { BriefcaseBusiness, CheckCircle2, FileText, PlugZap, ShieldCheck, Sparkles, Users, WalletCards } from "lucide-react";
 import { JobberDashboard } from "@/components/jobber-dashboard";
-import { QuickBooksFinance } from "@/components/quickbooks-finance";
 import { Badge, Panel } from "@/components/ui";
 
 const navItems = [
@@ -76,7 +75,16 @@ export default function DashboardPage() {
             </Panel>
 
             <Panel title="Cash Status" action={<WalletCards className="h-4 w-4 text-pine" />}>
-              <QuickBooksFinance />
+              <div className="grid gap-3">
+                <Badge tone="yellow">QuickBooks not connected yet</Badge>
+                <p className="text-sm text-steel">
+                  No fake cash numbers are shown. Connect QuickBooks to pull real balances, P&L, unpaid invoices, and bills.
+                </p>
+                <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white" href="/api/integrations/quickbooks/connect">
+                  <WalletCards className="h-4 w-4" />
+                  Connect QuickBooks
+                </a>
+              </div>
             </Panel>
 
             <Panel title="Safety Locks" action={<ShieldCheck className="h-4 w-4 text-pine" />}>
