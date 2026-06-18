@@ -6,6 +6,8 @@ const publicPaths = [
   "/api/auth/login",
   "/api/integrations/jobber/connect",
   "/api/integrations/jobber/callback",
+  "/api/integrations/quickbooks/connect",
+  "/api/integrations/quickbooks/callback",
   "/api/cron/jobber-sync"
 ];
 
