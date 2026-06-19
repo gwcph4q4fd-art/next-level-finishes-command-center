@@ -66,6 +66,10 @@ export default function DashboardPage() {
             <MobileNav href="/integrations" label="Connect" icon={<PlugZap />} />
           </nav>
 
+          <div className="mb-6">
+            <JobberDashboard />
+          </div>
+
           <section className="mb-6 grid gap-4 lg:grid-cols-[1fr_1fr_1fr]">
             <Panel title="Today’s Priorities">
               <div className="grid gap-3 text-sm text-steel">
@@ -99,7 +103,6 @@ export default function DashboardPage() {
             </Panel>
           </section>
 
-          <JobberDashboard />
         </div>
       </div>
     </main>
