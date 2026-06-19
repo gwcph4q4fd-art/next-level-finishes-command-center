@@ -82,6 +82,8 @@ export default function IntegrationsPage() {
       companyId?: string;
     } | null;
   } | null>(null);
+  const [metaStatus, setMetaStatus] = useState<InboundStatus | null>(null);
+  const [twilioStatus, setTwilioStatus] = useState<InboundStatus | null>(null);
 
   useEffect(() => {
     fetch("/api/integrations/jobber/status")
@@ -92,6 +94,14 @@ export default function IntegrationsPage() {
       .then((response) => response.json())
       .then(setQuickBooksStatus)
       .catch(() => setQuickBooksStatus(null));
+    fetch("/api/integrations/meta/status")
+      .then((response) => response.json())
+      .then(setMetaStatus)
+      .catch(() => setMetaStatus(null));
+    fetch("/api/integrations/twilio/status")
+      .then((response) => response.json())
+      .then(setTwilioStatus)
+      .catch(() => setTwilioStatus(null));
   }, []);
 
   return (
@@ -116,6 +126,8 @@ export default function IntegrationsPage() {
                 {integration.name === "QuickBooks Online" && quickBooksStatus?.connected ? <Badge tone="green">API connected</Badge> : null}
                 {integration.name === "QuickBooks Online" && quickBooksStatus && !quickBooksStatus.connected && quickBooksStatus.hasAccessToken ? <Badge tone="red">API failing</Badge> : null}
                 {integration.name === "QuickBooks Online" && quickBooksStatus && !quickBooksStatus.configured ? <Badge tone="yellow">Needs credentials</Badge> : null}
+                {integration.name === "Meta Leads" && metaStatus?.connected ? <Badge tone="green">Webhook ready</Badge> : null}
+                {integration.name === "Twilio SMS" && twilioStatus?.connected ? <Badge tone="green">Webhook ready</Badge> : null}
               </div>
               <div>
                 <p className="text-sm font-semibold text-ink">Goal</p>
@@ -126,6 +138,24 @@ export default function IntegrationsPage() {
               ) : null}
               {integration.name === "QuickBooks Online" ? (
                 <QuickBooksSetup status={quickBooksStatus} />
+              ) : null}
+              {integration.name === "Meta Leads" ? (
+                <InboundSetup
+                  name="Meta Lead Ads"
+                  status={metaStatus}
+                  configured={Boolean(metaStatus?.meta?.verifyTokenConfigured)}
+                  missing="META_VERIFY_TOKEN is not set in Vercel yet."
+                  instructions="Use this webhook URL in Meta Lead Ads. The verify token must match META_VERIFY_TOKEN."
+                />
+              ) : null}
+              {integration.name === "Twilio SMS" ? (
+                <InboundSetup
+                  name="Twilio SMS"
+                  status={twilioStatus}
+                  configured={Boolean(twilioStatus?.twilio?.accountSidConfigured && twilioStatus?.twilio?.authTokenConfigured)}
+                  missing="TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are not set in Vercel yet."
+                  instructions="Use this webhook URL for incoming messages on your Twilio phone number. Incoming texts create Lead Inbox records and draft-only replies."
+                />
               ) : null}
               <div>
                 <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
@@ -150,6 +180,83 @@ export default function IntegrationsPage() {
         ))}
       </section>
     </main>
+  );
+}
+
+type InboundStatus = {
+  connected: boolean;
+  status: string;
+  lastSyncAt?: string | null;
+  lastReceivedAt?: string | null;
+  lastError?: string | null;
+  lastLeadId?: string | null;
+  webhookUrl?: string;
+  meta?: {
+    verifyTokenConfigured: boolean;
+    pageAccessTokenConfigured: boolean;
+    appSecretConfigured: boolean;
+    webhookUrl: string;
+  } | null;
+  twilio?: {
+    accountSidConfigured: boolean;
+    authTokenConfigured: boolean;
+    phoneNumberConfigured: boolean;
+    webhookUrl: string;
+  } | null;
+};
+
+function InboundSetup({
+  name,
+  status,
+  configured,
+  missing,
+  instructions
+}: {
+  name: string;
+  status: InboundStatus | null;
+  configured: boolean;
+  missing: string;
+  instructions: string;
+}) {
+  return (
+    <div className="grid gap-3 rounded-md border border-ink/10 p-3">
+      <div>
+        <p className="text-sm font-semibold text-ink">Connection Status</p>
+        <p className="mt-1 text-sm text-steel">
+          {!status ? `Checking ${name} setup...` : configured ? `${name} receiver is ready in the app.` : missing}
+        </p>
+      </div>
+      <div className="grid gap-2 rounded-md bg-primer/60 p-3 text-xs text-steel">
+        <Diag label="App receiver" value={status?.connected ? status.status : configured ? "Ready for first webhook" : "Needs credentials"} bad={!configured} />
+        <Diag label="Last received" value={status?.lastReceivedAt ? new Date(status.lastReceivedAt).toLocaleString() : "Never"} />
+        <Diag label="Last error" value={status?.lastError || "None"} bad={Boolean(status?.lastError)} />
+        <Diag label="Last lead id" value={status?.lastLeadId || "None yet"} />
+        {status?.meta ? (
+          <>
+            <Diag label="Verify token" value={status.meta.verifyTokenConfigured ? "Configured" : "Missing"} bad={!status.meta.verifyTokenConfigured} />
+            <Diag label="App secret" value={status.meta.appSecretConfigured ? "Configured" : "Optional but missing"} />
+            <Diag label="Page token" value={status.meta.pageAccessTokenConfigured ? "Configured" : "Optional for later enrichment"} />
+          </>
+        ) : null}
+        {status?.twilio ? (
+          <>
+            <Diag label="Account SID" value={status.twilio.accountSidConfigured ? "Configured" : "Missing"} bad={!status.twilio.accountSidConfigured} />
+            <Diag label="Auth token" value={status.twilio.authTokenConfigured ? "Configured" : "Missing"} bad={!status.twilio.authTokenConfigured} />
+            <Diag label="Phone number" value={status.twilio.phoneNumberConfigured ? "Configured" : "Optional but missing"} />
+          </>
+        ) : null}
+      </div>
+      {status?.webhookUrl ? (
+        <div>
+          <p className="text-sm font-semibold text-ink">{name} Webhook URL</p>
+          <code className="mt-1 block overflow-x-auto rounded-md bg-ink p-3 text-xs text-white">{status.webhookUrl}</code>
+          <p className="mt-2 text-xs text-steel">{instructions}</p>
+        </div>
+      ) : null}
+      <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink" href="/leads">
+        Open Lead Inbox
+      </a>
+    </div>
   );
 }
 
