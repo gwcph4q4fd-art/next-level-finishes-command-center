@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BriefcaseBusiness, CheckCircle2, FileText, PlugZap, ShieldCheck, Sparkles, Users, WalletCards } from "lucide-react";
+import { BriefcaseBusiness, FileText, PlugZap, Sparkles, Users, WalletCards } from "lucide-react";
 import { JobberDashboard } from "@/components/jobber-dashboard";
 import { Badge, Panel } from "@/components/ui";
 
@@ -41,10 +41,11 @@ export default function DashboardPage() {
         <div className="min-w-0 flex-1">
           <header className="mb-6 flex flex-col justify-between gap-4 border-b border-ink/10 pb-5 md:flex-row md:items-end">
             <div>
-              <p className="text-sm font-medium text-pine">Next Level Finishes · Titusville, PA</p>
-              <h2 className="mt-2 text-3xl font-bold tracking-normal text-ink">Daily command center</h2>
+              <p className="text-sm font-medium text-pine">Next Level Finishes - Titusville, PA</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-normal text-ink">Business command center</h2>
               <p className="mt-2 max-w-2xl text-sm text-steel">
-                Live Jobber data first. Draft actions only. No texts, emails, Jobber edits, invoices, ads, or financial changes happen automatically.
+                Live Jobber work, follow-up pressure, quote movement, invoice review, and AI draft actions in one place.
+                Nothing sends, edits, publishes, or changes finances automatically.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -70,19 +71,13 @@ export default function DashboardPage() {
             <JobberDashboard />
           </div>
 
-          <section className="mb-6 grid gap-4 lg:grid-cols-[1fr_1fr_1fr]">
-            <Panel title="Today’s Priorities">
-              <div className="grid gap-3 text-sm text-steel">
-                <p>Priorities are generated from synced Jobber work below. If Jobber has no live data, the dashboard will say what is missing.</p>
-                <Link className="font-semibold text-pine" href="/agent">Ask the AI agent what to do today</Link>
-              </div>
-            </Panel>
-
-            <Panel title="Cash Status" action={<WalletCards className="h-4 w-4 text-pine" />}>
+          <section className="mb-6 grid gap-4 lg:grid-cols-3">
+            <Panel title="Financial System" action={<WalletCards className="h-4 w-4 text-pine" />}>
               <div className="grid gap-3">
                 <Badge tone="yellow">QuickBooks not connected yet</Badge>
                 <p className="text-sm text-steel">
-                  No fake cash numbers are shown. Connect QuickBooks to pull real balances, P&L, unpaid invoices, and bills.
+                  No fake cash, profit, deposit, bill, or tax numbers are shown. QuickBooks will be the source for balances,
+                  P&L, unpaid invoices, and bills once Intuit authorization is healthy.
                 </p>
                 <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white" href="/api/integrations/quickbooks/connect">
                   <WalletCards className="h-4 w-4" />
@@ -91,18 +86,24 @@ export default function DashboardPage() {
               </div>
             </Panel>
 
-            <Panel title="Safety Locks" action={<ShieldCheck className="h-4 w-4 text-pine" />}>
+            <Panel title="Lead Intake">
               <div className="grid gap-3 text-sm text-steel">
-                {["Jobber is read-only", "AI creates drafts only", "Owner approval required", "QuickBooks not connected yet"].map((item) => (
-                  <div key={item} className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-pine" />
-                    {item}
-                  </div>
-                ))}
+                <p>Meta Leads and Twilio SMS receiver routes are installed. The app shows missing setup instead of inventing leads.</p>
+                <div className="flex flex-wrap gap-2">
+                  <Link className="font-semibold text-pine" href="/integrations">Open integrations</Link>
+                  <Link className="font-semibold text-pine" href="/leads">Lead inbox</Link>
+                </div>
+              </div>
+            </Panel>
+
+            <Panel title="AI Controls">
+              <div className="grid gap-3 text-sm text-steel">
+                <Badge tone="green">Draft and approve only</Badge>
+                <p>The agent can draft follow-ups, prep checklists, quote notes, client texts, and ad ideas from live Jobber data.</p>
+                <Link className="font-semibold text-pine" href="/agent">Open AI agent</Link>
               </div>
             </Panel>
           </section>
-
         </div>
       </div>
     </main>
