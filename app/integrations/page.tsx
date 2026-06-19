@@ -59,12 +59,39 @@ export default function IntegrationsPage() {
       body?: string;
     };
   } | null>(null);
+  const [quickBooksStatus, setQuickBooksStatus] = useState<{
+    configured: boolean;
+    connected: boolean;
+    hasAccessToken?: boolean;
+    hasRefreshToken?: boolean;
+    expiresAt?: string | null;
+    companyName?: string;
+    realmId?: string;
+    lastSyncAt?: string | null;
+    lastSyncError?: string | null;
+    lastRefreshStatus?: string | null;
+    lastRefreshError?: string | null;
+    lastApiStatus?: string | null;
+    scope?: string;
+    redirectUri?: string;
+    sampleApi?: {
+      ok: boolean;
+      status: number;
+      body?: string;
+      companyName?: string;
+      companyId?: string;
+    } | null;
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/integrations/jobber/status")
       .then((response) => response.json())
       .then(setJobberStatus)
       .catch(() => setJobberStatus(null));
+    fetch("/api/integrations/quickbooks/status")
+      .then((response) => response.json())
+      .then(setQuickBooksStatus)
+      .catch(() => setQuickBooksStatus(null));
   }, []);
 
   return (
@@ -86,6 +113,9 @@ export default function IntegrationsPage() {
                 {integration.name === "Jobber" && jobberStatus?.connected ? <Badge tone="green">API connected</Badge> : null}
                 {integration.name === "Jobber" && jobberStatus && !jobberStatus.connected && jobberStatus.hasAccessToken ? <Badge tone="red">API failing</Badge> : null}
                 {integration.name === "Jobber" && jobberStatus && !jobberStatus.configured ? <Badge tone="yellow">Needs credentials</Badge> : null}
+                {integration.name === "QuickBooks Online" && quickBooksStatus?.connected ? <Badge tone="green">API connected</Badge> : null}
+                {integration.name === "QuickBooks Online" && quickBooksStatus && !quickBooksStatus.connected && quickBooksStatus.hasAccessToken ? <Badge tone="red">API failing</Badge> : null}
+                {integration.name === "QuickBooks Online" && quickBooksStatus && !quickBooksStatus.configured ? <Badge tone="yellow">Needs credentials</Badge> : null}
               </div>
               <div>
                 <p className="text-sm font-semibold text-ink">Goal</p>
@@ -93,6 +123,9 @@ export default function IntegrationsPage() {
               </div>
               {integration.name === "Jobber" ? (
                 <JobberSetup status={jobberStatus} />
+              ) : null}
+              {integration.name === "QuickBooks Online" ? (
+                <QuickBooksSetup status={quickBooksStatus} />
               ) : null}
               <div>
                 <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
@@ -117,6 +150,94 @@ export default function IntegrationsPage() {
         ))}
       </section>
     </main>
+  );
+}
+
+function QuickBooksSetup({
+  status
+}: {
+  status: {
+    configured: boolean;
+    connected: boolean;
+    hasAccessToken?: boolean;
+    hasRefreshToken?: boolean;
+    expiresAt?: string | null;
+    companyName?: string;
+    realmId?: string;
+    lastSyncAt?: string | null;
+    lastSyncError?: string | null;
+    lastRefreshStatus?: string | null;
+    lastRefreshError?: string | null;
+    lastApiStatus?: string | null;
+    scope?: string;
+    redirectUri?: string;
+    sampleApi?: {
+      ok: boolean;
+      status: number;
+      body?: string;
+      companyName?: string;
+      companyId?: string;
+    } | null;
+  } | null;
+}) {
+  return (
+    <div className="grid gap-3 rounded-md border border-ink/10 p-3">
+      <div>
+        <p className="text-sm font-semibold text-ink">Connection Status</p>
+        <p className="mt-1 text-sm text-steel">
+          {!status
+            ? "Checking QuickBooks setup..."
+            : status.connected
+              ? `API verified for ${status.companyName || "QuickBooks Online"}`
+              : status.configured
+                ? status.hasAccessToken
+                  ? "QuickBooks has saved tokens, but the API test is failing."
+                  : "Ready to authorize with QuickBooks."
+                : "Add QuickBooks credentials in Vercel before connecting."}
+        </p>
+      </div>
+
+      {status ? (
+        <div className="grid gap-2 rounded-md bg-primer/60 p-3 text-xs text-steel">
+          <Diag label="API test" value={status.sampleApi ? `${status.sampleApi.status} ${status.sampleApi.ok ? "OK" : "FAILED"}` : "Not checked"} bad={!status.sampleApi?.ok} />
+          <Diag label="Access token" value={status.hasAccessToken ? "Saved" : "Missing"} bad={!status.hasAccessToken} />
+          <Diag label="Refresh token" value={status.hasRefreshToken ? "Saved" : "Missing"} bad={!status.hasRefreshToken} />
+          <Diag label="Token expires" value={status.expiresAt ? new Date(status.expiresAt).toLocaleString() : "Missing"} bad={!status.expiresAt} />
+          <Diag label="Company / realm id" value={status.realmId || "Missing"} bad={!status.realmId} />
+          <Diag label="Scope" value={status.scope || "com.intuit.quickbooks.accounting"} />
+          <Diag label="Last sync" value={status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : "Never"} />
+          <Diag label="Last sync error" value={status.lastSyncError || "None"} bad={Boolean(status.lastSyncError)} />
+          <Diag label="Refresh status" value={status.lastRefreshStatus || "Not checked"} bad={status.lastRefreshStatus === "failed" || status.lastRefreshStatus === "missing_refresh_token"} />
+          <Diag label="Refresh error" value={status.lastRefreshError || "None"} bad={Boolean(status.lastRefreshError)} />
+          <Diag label="Last API status" value={status.lastApiStatus || "Not checked"} bad={status.lastApiStatus === "401"} />
+          {!status.sampleApi?.ok ? (
+            <div>
+              <p className="font-semibold uppercase text-steel">Exact failure reason</p>
+              <p className="break-words font-semibold text-clay">{status.sampleApi?.body || status.lastSyncError || "QuickBooks API has not succeeded yet."}</p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {status?.redirectUri ? (
+        <div>
+          <p className="text-sm font-semibold text-ink">QuickBooks Redirect URI</p>
+          <code className="mt-1 block overflow-x-auto rounded-md bg-ink p-3 text-xs text-white">{status.redirectUri}</code>
+          <p className="mt-2 text-xs text-steel">
+            If Intuit says there is a connection problem after sign-in, this exact URI must be saved in the Intuit app under Production Keys & OAuth redirect URIs.
+          </p>
+        </div>
+      ) : null}
+
+      <a
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white transition hover:bg-pine/90 aria-disabled:pointer-events-none aria-disabled:opacity-60"
+        href="/api/integrations/quickbooks/connect"
+        aria-disabled={!status?.configured}
+      >
+        <ExternalLink className="h-4 w-4" />
+        {status?.hasAccessToken ? "Reauthorize QuickBooks" : "Connect QuickBooks"}
+      </a>
+    </div>
   );
 }
 
