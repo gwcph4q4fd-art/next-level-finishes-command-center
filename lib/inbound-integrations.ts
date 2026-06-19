@@ -1,7 +1,6 @@
 import crypto from "crypto";
-import { IntegrationMode, IntegrationProvider } from "@prisma/client";
+import { DraftType, IntegrationMode, IntegrationProvider, JobType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { leadToUi, toDbJobType } from "@/lib/persistence-mappers";
 
 const APP_URL = "https://next-level-finishes-command-center.vercel.app";
 const OWNER_ACCOUNT_KEY = "owner";
@@ -112,7 +111,7 @@ export async function createInboundLead(input: {
   const lead = await prisma.lead.create({
     data: {
       source: input.source,
-      jobType: toDbJobType("Exterior Painting"),
+      jobType: JobType.EXTERIOR_PAINTING,
       location: input.location || "Titusville, PA",
       message: input.message,
       urgency: "New inbound",
@@ -132,7 +131,7 @@ export async function createInboundLead(input: {
 
   await prisma.aiDraft.create({
     data: {
-      type: input.source === "Twilio SMS" ? "TEXT_REPLY" : "LEAD_REPLY",
+      type: input.source === "Twilio SMS" ? DraftType.TEXT_REPLY : DraftType.LEAD_REPLY,
       leadId: lead.id,
       prompt: `Create a friendly local-contractor reply for ${input.source}.`,
       output: `Draft needed for ${lead.customer?.name || "new lead"}: ask for project address, photos, timing, and the best time to schedule an estimate. Do not send automatically.`,
@@ -140,7 +139,14 @@ export async function createInboundLead(input: {
     }
   });
 
-  return leadToUi(lead);
+  return {
+    id: lead.id,
+    name: lead.customer?.name || "New inbound lead",
+    phone: lead.customer?.phone || "",
+    email: lead.customer?.email || "",
+    source: lead.source,
+    message: lead.message
+  };
 }
 
 export function verifyMetaSignature(rawBody: string, signature?: string | null) {
