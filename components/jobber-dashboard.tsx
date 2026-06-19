@@ -38,13 +38,13 @@ type JobberStatus = {
   apiHealthy?: boolean;
 };
 
-const pipelineLabels: Array<[keyof JobberCommandCenterData["pipeline"], string]> = [
-  ["newRequests", "New Requests / Leads"],
-  ["quotesSent", "Quotes Sent"],
-  ["awaitingApproval", "Awaiting Approval"],
-  ["upcomingJobs", "Upcoming Jobs"],
-  ["completedButUnpaid", "Completed but Unpaid"],
-  ["followUpNeeded", "Follow-Up Needed"]
+const pipelineLabels: Array<{ key: keyof JobberCommandCenterData["pipeline"]; title: string; hrefBase: string }> = [
+  { key: "newRequests", title: "New Requests / Leads", hrefBase: "/jobber/requests" },
+  { key: "quotesSent", title: "Quotes Sent", hrefBase: "/jobber/quotes" },
+  { key: "awaitingApproval", title: "Awaiting Approval", hrefBase: "/jobber/quotes" },
+  { key: "upcomingJobs", title: "Upcoming Jobs", hrefBase: "/jobber/jobs" },
+  { key: "completedButUnpaid", title: "Completed but Unpaid", hrefBase: "/jobber/invoices" },
+  { key: "followUpNeeded", title: "Follow-Up Needed", hrefBase: "/agent" }
 ];
 
 const agentQuestions = [
@@ -120,6 +120,28 @@ export function JobberDashboard() {
   function makeDraft(label: string, body: string) {
     setDraft(`${label}\n\n${body}\n\nBusiness voice: professional, friendly, direct, local contractor. Draft only. Do not send automatically.`);
   }
+
+  const commandMetrics = useMemo(() => {
+    if (!data) return null;
+    const openQuoteValue = data.quotes.reduce((sum, quote) => sum + Number(quote.amount || 0), 0);
+    const invoiceValue = data.invoices.reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0);
+    const upcomingValue = data.upcomingJobs.reduce((sum, job) => sum + Number(job.total || job.quoteAmount || 0), 0);
+    const nextJob = data.upcomingJobs[0];
+    const urgentFollowUp = data.pipeline.followUpNeeded[0] || data.pipeline.awaitingApproval[0] || data.pipeline.newRequests[0];
+
+    return {
+      nextJob,
+      urgentFollowUp,
+      openQuoteValue,
+      invoiceValue,
+      upcomingValue,
+      moneyMove:
+        data.pipeline.completedButUnpaid[0] ||
+        data.pipeline.awaitingApproval[0] ||
+        data.pipeline.quotesSent[0] ||
+        data.pipeline.newRequests[0]
+    };
+  }, [data]);
 
   return (
     <div className="grid gap-5">
@@ -198,6 +220,88 @@ export function JobberDashboard() {
 
       {data ? (
         <>
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <CommandCard
+              title="Next scheduled job"
+              value={commandMetrics?.nextJob ? commandMetrics.nextJob.jobTitle : "No live job scheduled"}
+              detail={commandMetrics?.nextJob ? `${commandMetrics.nextJob.clientName}${commandMetrics.nextJob.startDate ? ` - ${new Date(commandMetrics.nextJob.startDate).toLocaleDateString()}` : ""}` : "Jobber did not return an upcoming start date."}
+              href={commandMetrics?.nextJob ? `/jobber/jobs/${encodeURIComponent(commandMetrics.nextJob.id)}` : "/jobber/jobs"}
+              tone="green"
+            />
+            <CommandCard
+              title="Open quote pipeline"
+              value={`${data.quotes.length} quotes`}
+              detail={commandMetrics?.openQuoteValue ? `${currency(commandMetrics.openQuoteValue)} in quoted work returned by Jobber` : "No quote dollars returned yet."}
+              href="/jobber/quotes"
+              tone="blue"
+            />
+            <CommandCard
+              title="Invoice/deposit review"
+              value={`${data.invoices.length} invoices`}
+              detail={commandMetrics?.invoiceValue ? `${currency(commandMetrics.invoiceValue)} in recent invoice records` : "Connect QuickBooks later for real cash position."}
+              href="/jobber/invoices"
+              tone="yellow"
+            />
+            <CommandCard
+              title="Follow-up pressure"
+              value={`${data.pipeline.followUpNeeded.length} items`}
+              detail={commandMetrics?.urgentFollowUp ? `${commandMetrics.urgentFollowUp.title}: ${commandMetrics.urgentFollowUp.reason || "Needs next action."}` : "No urgent follow-up returned."}
+              href="/agent"
+              tone="red"
+            />
+          </section>
+
+          <section className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+            <Panel title="Today's Operating Brief">
+              <div className="grid gap-3">
+                {data.agent.focusToday.map((item) => (
+                  <div key={item} className="rounded-md border border-ink/10 bg-primer/60 p-3 text-sm text-ink">
+                    {item}
+                  </div>
+                ))}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Link href="/jobber/requests" className="rounded-md bg-pine/10 p-3 text-sm font-semibold text-pine">
+                    {data.requests.length} live requests/leads
+                  </Link>
+                  <Link href="/jobber/clients" className="rounded-md bg-pine/10 p-3 text-sm font-semibold text-pine">
+                    {data.clients.length} synced clients
+                  </Link>
+                </div>
+              </div>
+            </Panel>
+
+            <Panel title="Money Move">
+              {commandMetrics?.moneyMove ? (
+                <div className="grid gap-3">
+                  <p className="text-sm text-steel">Most useful next money action from live Jobber data:</p>
+                  <Link
+                    href={commandMetrics.moneyMove.jobberUrl ? commandMetrics.moneyMove.jobberUrl : "/agent"}
+                    target={commandMetrics.moneyMove.jobberUrl ? "_blank" : undefined}
+                    className="rounded-md border border-ink/10 bg-white p-3 text-sm font-semibold text-ink hover:border-pine/40"
+                  >
+                    {commandMetrics.moneyMove.title}
+                    <span className="mt-1 block text-xs font-normal text-steel">
+                      {commandMetrics.moneyMove.clientName || "Client missing"} {typeof commandMetrics.moneyMove.amount === "number" ? `- ${currency(commandMetrics.moneyMove.amount)}` : ""}
+                    </span>
+                  </Link>
+                  <button
+                    className="rounded-md border border-ink/10 bg-white p-3 text-left text-sm font-semibold text-ink hover:border-pine/40"
+                    onClick={() =>
+                      makeDraft(
+                        "Draft follow-up",
+                        `Follow up on ${commandMetrics.moneyMove?.title}. Keep it short, friendly, and focused on the next approval/payment/scheduling step.`
+                      )
+                    }
+                  >
+                    Draft follow-up for this
+                  </button>
+                </div>
+              ) : (
+                <EmptyState text="No quote, invoice, request, or unpaid-work item came back from Jobber to prioritize." />
+              )}
+            </Panel>
+          </section>
+
           <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
             <Panel title="Upcoming Jobber Jobs" action={<Link href="/jobber/jobs" className="text-sm font-semibold text-pine">View all</Link>}>
               <div className="grid gap-4">
@@ -226,14 +330,43 @@ export function JobberDashboard() {
               <Link href="/jobber/jobs">Jobs</Link>
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {pipelineLabels.map(([key, title]) => (
-                <PipelineColumn key={key} title={title} items={data.pipeline[key]} />
+              {pipelineLabels.map(({ key, title, hrefBase }) => (
+                <PipelineColumn key={key} title={title} items={data.pipeline[key]} hrefBase={hrefBase} />
               ))}
             </div>
           </Panel>
         </>
       ) : null}
     </div>
+  );
+}
+
+function CommandCard({
+  title,
+  value,
+  detail,
+  href,
+  tone
+}: {
+  title: string;
+  value: string;
+  detail: string;
+  href: string;
+  tone: "green" | "blue" | "yellow" | "red";
+}) {
+  const toneClass = {
+    green: "border-pine/25 bg-pine/10",
+    blue: "border-sky-200 bg-sky-50",
+    yellow: "border-moss/30 bg-moss/10",
+    red: "border-clay/20 bg-clay/10"
+  }[tone];
+
+  return (
+    <Link href={href} className={`block rounded-lg border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${toneClass}`}>
+      <p className="text-xs font-semibold uppercase text-steel">{title}</p>
+      <p className="mt-2 line-clamp-2 min-h-12 text-lg font-bold text-ink">{value}</p>
+      <p className="mt-2 line-clamp-3 text-sm text-steel">{detail}</p>
+    </Link>
   );
 }
 
@@ -306,7 +439,7 @@ function Diagnostic({ label, value, tone = "normal" }: { label: string; value: s
   );
 }
 
-function PipelineColumn({ title, items }: { title: string; items: JobberPipelineItem[] }) {
+function PipelineColumn({ title, items, hrefBase }: { title: string; items: JobberPipelineItem[]; hrefBase: string }) {
   return (
     <section className="rounded-md border border-ink/10 p-3">
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -324,6 +457,7 @@ function PipelineColumn({ title, items }: { title: string; items: JobberPipeline
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-steel">
               {typeof item.amount === "number" ? <span>{currency(item.amount)}</span> : null}
               {item.date ? <span>{new Date(item.date).toLocaleDateString()}</span> : null}
+              {hrefBase !== "/agent" ? <Link className="font-semibold text-pine" href={`${hrefBase}/${encodeURIComponent(item.id)}`}>Open details</Link> : <Link className="font-semibold text-pine" href={hrefBase}>Ask agent</Link>}
               {item.jobberUrl ? <a className="font-semibold text-pine" href={item.jobberUrl} target="_blank" rel="noreferrer">Open in Jobber</a> : null}
             </div>
             {item.reason ? <p className="mt-2 text-xs text-clay">{item.reason}</p> : null}
