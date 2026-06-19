@@ -8,6 +8,8 @@ const publicPaths = [
   "/api/integrations/jobber/callback",
   "/api/integrations/quickbooks/connect",
   "/api/integrations/quickbooks/callback",
+  "/api/integrations/meta/webhook",
+  "/api/integrations/twilio/sms",
   "/api/cron/jobber-sync"
 ];
 
