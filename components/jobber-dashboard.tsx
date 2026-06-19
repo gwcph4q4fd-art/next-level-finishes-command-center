@@ -133,7 +133,7 @@ export function JobberDashboard() {
         }
       >
         <div className="grid gap-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-steel">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-steel">
             {loading ? (
               <Badge>Checking Jobber</Badge>
             ) : status?.connected && status.hasAccessToken && status.apiHealthy !== false ? (
@@ -151,20 +151,23 @@ export function JobberDashboard() {
           </div>
 
           {status ? (
-            <div className="grid gap-2 rounded-md border border-ink/10 bg-primer/50 p-3 text-xs text-steel sm:grid-cols-2 xl:grid-cols-5">
-              <Diagnostic label="Connected" value={status.connected ? "Yes" : "No"} />
-              <Diagnostic label="Token expires" value={status.expiresAt ? new Date(status.expiresAt).toLocaleString() : "Missing"} tone={status.tokenExpired ? "bad" : "normal"} />
-              <Diagnostic label="Refresh token" value={status.hasRefreshToken ? "Saved" : "Missing"} tone={status.hasRefreshToken ? "normal" : "bad"} />
-              <Diagnostic label="API account id" value={status.accountId || "Missing"} />
-              <Diagnostic label="Refresh status" value={status.refreshStatus || "Not checked"} tone={status.refreshStatus === "failed" || status.refreshStatus === "missing_refresh_token" ? "bad" : "normal"} />
-              <Diagnostic label="Last refresh" value={status.lastRefreshAttemptAt ? new Date(status.lastRefreshAttemptAt).toLocaleString() : "Not checked"} />
-              <Diagnostic label="Last sync" value={status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : "Never"} />
-              <Diagnostic label="GraphQL status" value={status.lastGraphqlStatus || "Not checked"} tone={status.lastGraphqlStatus?.includes("401") ? "bad" : "normal"} />
-              <Diagnostic label="Scopes/token payload" value={status.scopes || "Not exposed by token"} />
-              <Diagnostic label="Scopes needed" value="Read clients, jobs, requests, quotes, invoices" />
-              <Diagnostic label="Refresh error" value={status.lastRefreshError || "None"} tone={status.lastRefreshError ? "bad" : "normal"} />
-              <Diagnostic label="Last sync error" value={status.lastSyncError || "None"} tone={status.lastSyncError ? "bad" : "normal"} />
-            </div>
+            <details className="rounded-md border border-ink/10 bg-primer/50 p-3 text-xs text-steel">
+              <summary className="cursor-pointer text-sm font-semibold text-ink">Jobber diagnostics</summary>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                <Diagnostic label="Connected" value={status.connected ? "Yes" : "No"} />
+                <Diagnostic label="Token expires" value={status.expiresAt ? new Date(status.expiresAt).toLocaleString() : "Missing"} tone={status.tokenExpired ? "bad" : "normal"} />
+                <Diagnostic label="Refresh token" value={status.hasRefreshToken ? "Saved" : "Missing"} tone={status.hasRefreshToken ? "normal" : "bad"} />
+                <Diagnostic label="API account id" value={status.accountId || "Missing"} />
+                <Diagnostic label="Refresh status" value={status.refreshStatus || "Not checked"} tone={status.refreshStatus === "failed" || status.refreshStatus === "missing_refresh_token" ? "bad" : "normal"} />
+                <Diagnostic label="Last refresh" value={status.lastRefreshAttemptAt ? new Date(status.lastRefreshAttemptAt).toLocaleString() : "Not checked"} />
+                <Diagnostic label="Last sync" value={status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : "Never"} />
+                <Diagnostic label="GraphQL status" value={status.lastGraphqlStatus || "Not checked"} tone={status.lastGraphqlStatus?.includes("401") ? "bad" : "normal"} />
+                <Diagnostic label="Scopes/token payload" value={status.scopes || "Not exposed by token"} />
+                <Diagnostic label="Scopes needed" value="Read clients, jobs, requests, quotes, invoices" />
+                <Diagnostic label="Refresh error" value={status.lastRefreshError || "None"} tone={status.lastRefreshError ? "bad" : "normal"} />
+                <Diagnostic label="Last sync error" value={status.lastSyncError || "None"} tone={status.lastSyncError ? "bad" : "normal"} />
+              </div>
+            </details>
           ) : null}
 
           {error ? <p className="rounded-md bg-clay/10 p-3 text-sm text-clay">{error}</p> : null}
@@ -237,23 +240,26 @@ export function JobberDashboard() {
 function JobCard({ job }: { job: JobberJobCard }) {
   return (
     <article className="rounded-md border border-ink/10 bg-white p-4 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase text-steel">{job.clientName}</p>
           <h3 className="mt-1 break-words text-lg font-bold text-ink">{job.jobTitle}</h3>
         </div>
         <div className="flex flex-wrap gap-2">
           {job.status ? <Badge tone="green">{job.status}</Badge> : <Badge tone="yellow">Status missing</Badge>}
-          <Link className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-ink/10 px-3 py-2 text-xs font-semibold text-ink hover:border-pine/40" href={`/jobber/jobs/${encodeURIComponent(job.id)}`}>
-            Details
-          </Link>
-          {job.jobberUrl ? (
-            <a className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md border border-ink/10 px-3 py-2 text-xs font-semibold text-ink hover:border-pine/40" href={job.jobberUrl} target="_blank" rel="noreferrer">
-              <ExternalLink className="h-3.5 w-3.5" />
-              Jobber
-            </a>
-          ) : null}
         </div>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-pine px-4 py-3 text-sm font-semibold text-white" href={`/jobber/jobs/${encodeURIComponent(job.id)}`}>
+          Open job details
+        </Link>
+        {job.jobberUrl ? (
+          <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-ink/10 bg-white px-4 py-3 text-sm font-semibold text-ink hover:border-pine/40" href={job.jobberUrl} target="_blank" rel="noreferrer">
+            <ExternalLink className="h-4 w-4" />
+            Open in Jobber
+          </a>
+        ) : null}
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -318,7 +324,7 @@ function PipelineColumn({ title, items }: { title: string; items: JobberPipeline
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-steel">
               {typeof item.amount === "number" ? <span>{currency(item.amount)}</span> : null}
               {item.date ? <span>{new Date(item.date).toLocaleDateString()}</span> : null}
-              {item.jobberUrl ? <a className="font-semibold text-pine" href={item.jobberUrl} target="_blank" rel="noreferrer">Open</a> : null}
+              {item.jobberUrl ? <a className="font-semibold text-pine" href={item.jobberUrl} target="_blank" rel="noreferrer">Open in Jobber</a> : null}
             </div>
             {item.reason ? <p className="mt-2 text-xs text-clay">{item.reason}</p> : null}
           </div>
