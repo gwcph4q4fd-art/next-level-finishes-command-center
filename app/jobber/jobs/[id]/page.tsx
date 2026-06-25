@@ -47,7 +47,7 @@ export default function JobberJobDetailPage({ params }: { params: { id: string }
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
+    <main className="mx-auto min-h-screen max-w-6xl px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
       <Link href="/" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-pine">
         <ArrowLeft className="h-4 w-4" />
         Back to dashboard
@@ -67,7 +67,7 @@ export default function JobberJobDetailPage({ params }: { params: { id: string }
           <Panel
             title={detail.job.jobTitle}
             action={detail.job.jobberUrl ? (
-              <a className={buttonClass} href={detail.job.jobberUrl} target="_blank" rel="noreferrer">
+              <a className={`${buttonClass} w-full sm:w-auto`} href={detail.job.jobberUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="h-4 w-4" />
                 Open Jobber
               </a>
@@ -116,7 +116,7 @@ export default function JobberJobDetailPage({ params }: { params: { id: string }
                 </button>
               ))}
             </div>
-            {draft ? <pre className="mt-4 whitespace-pre-wrap rounded-md bg-ink p-4 text-xs leading-relaxed text-white">{draft}</pre> : null}
+            {draft ? <pre className="mt-4 max-w-full overflow-auto whitespace-pre-wrap rounded-md bg-ink p-4 text-xs leading-relaxed text-white">{draft}</pre> : null}
           </Panel>
         </div>
       ) : null}
@@ -126,11 +126,11 @@ export default function JobberJobDetailPage({ params }: { params: { id: string }
 
 function Info({ icon, label, value, compact = false }: { icon: React.ReactNode; label: string; value: string; compact?: boolean }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex min-w-0 gap-3">
       <div className="mt-0.5 text-pine [&>svg]:h-4 [&>svg]:w-4">{icon}</div>
-      <div>
+      <div className="min-w-0">
         <p className="text-xs font-semibold uppercase text-steel">{label}</p>
-        <p className={compact ? "text-sm text-ink" : "text-sm leading-relaxed text-ink"}>{value}</p>
+        <p className={compact ? "break-words text-sm text-ink" : "break-words text-sm leading-relaxed text-ink"}>{value}</p>
       </div>
     </div>
   );
@@ -151,9 +151,9 @@ function RelatedItems({ items, empty }: { items: JobberPipelineItem[]; empty: st
   return (
     <div className="grid gap-3">
       {items.map((item) => (
-        <div key={item.id} className="rounded-md border border-ink/10 p-3">
+        <div key={item.id} className="min-w-0 rounded-md border border-ink/10 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-ink">{item.title}</p>
+            <p className="break-words text-sm font-semibold text-ink">{item.title}</p>
             {item.status ? <Badge tone="blue">{item.status}</Badge> : null}
           </div>
           <p className="mt-1 text-xs text-steel">{typeof item.amount === "number" ? currency(item.amount) : "Amount missing"}</p>
