@@ -13,11 +13,11 @@ export function Panel({
   action?: ReactNode;
 }) {
   return (
-    <section className={cn("rounded-lg border border-ink/10 bg-white p-5 shadow-soft", className)}>
+    <section className={cn("min-w-0 rounded-lg border border-ink/10 bg-white p-4 shadow-soft sm:p-5", className)}>
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
-          {title ? <h2 className="text-base font-semibold text-ink">{title}</h2> : <span />}
-          {action}
+        <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {title ? <h2 className="min-w-0 break-words text-base font-semibold text-ink">{title}</h2> : <span />}
+          {action ? <div className="min-w-0 shrink-0">{action}</div> : null}
         </div>
       )}
       {children}
@@ -60,4 +60,4 @@ export const inputClass =
   "min-h-10 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-pine focus:ring-2 focus:ring-pine/20";
 
 export const buttonClass =
-  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white transition hover:bg-pine/90 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white transition hover:bg-pine/90 disabled:cursor-not-allowed disabled:opacity-60";
