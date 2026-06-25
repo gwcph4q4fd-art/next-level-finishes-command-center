@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 export default function DashboardPage() {
   return (
     <main className="min-h-screen">
-      <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl gap-6 px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
         <aside className="hidden w-64 shrink-0 lg:block">
           <div className="sticky top-5 rounded-lg border border-ink/10 bg-ink p-5 text-white shadow-soft">
             <div className="mb-8">
@@ -39,28 +39,28 @@ export default function DashboardPage() {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="mb-6 flex flex-col justify-between gap-4 border-b border-ink/10 pb-5 md:flex-row md:items-end">
+          <header className="mb-5 flex flex-col justify-between gap-4 border-b border-ink/10 pb-5 md:mb-6 md:flex-row md:items-end">
             <div>
               <p className="text-sm font-medium text-pine">Next Level Finishes - Titusville, PA</p>
-              <h2 className="mt-2 text-3xl font-bold tracking-normal text-ink">Business command center</h2>
+              <h2 className="mt-2 text-2xl font-bold tracking-normal text-ink sm:text-3xl">Business command center</h2>
               <p className="mt-2 max-w-2xl text-sm text-steel">
                 Live Jobber work, follow-up pressure, quote movement, invoice review, and AI draft actions in one place.
                 Nothing sends, edits, publishes, or changes finances automatically.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/agent" className="inline-flex min-h-10 items-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+              <Link href="/agent" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white">
                 <Sparkles className="h-4 w-4" />
                 Open agent
               </Link>
-              <Link href="/integrations" className="inline-flex min-h-10 items-center gap-2 rounded-md border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink">
+              <Link href="/integrations" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink">
                 <PlugZap className="h-4 w-4" />
                 Integrations
               </Link>
             </div>
           </header>
 
-          <nav className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:hidden">
+          <nav className="sticky top-0 z-20 mb-5 grid grid-cols-2 gap-2 bg-[#f7f3ec]/95 py-2 backdrop-blur sm:grid-cols-4 lg:hidden">
             <MobileNav href="/jobber/jobs" label="Jobs" icon={<BriefcaseBusiness />} />
             <MobileNav href="/jobber/clients" label="Clients" icon={<Users />} />
             <MobileNav href="/jobber/quotes" label="Quotes" icon={<FileText />} />
@@ -79,7 +79,7 @@ export default function DashboardPage() {
                   No fake cash, profit, deposit, bill, or tax numbers are shown. QuickBooks will be the source for balances,
                   P&L, unpaid invoices, and bills once Intuit authorization is healthy.
                 </p>
-                <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white" href="/api/integrations/quickbooks/connect">
+                <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white" href="/api/integrations/quickbooks/connect">
                   <WalletCards className="h-4 w-4" />
                   Connect QuickBooks
                 </a>
