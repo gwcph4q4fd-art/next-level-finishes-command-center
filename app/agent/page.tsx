@@ -49,7 +49,7 @@ export default function AgentPage() {
     const quoteFocus = data.quotes
       .filter((quote) => quote.reason || String(quote.status || "").toLowerCase().includes("awaiting"))
       .slice(0, 5)
-      .map((quote) => `${quote.title} · ${quote.clientName || "client missing"} · ${quote.amount ? `$${quote.amount}` : "amount missing"}`);
+      .map((quote) => `${quote.title} - ${quote.clientName || "client missing"} - ${quote.amount ? `$${quote.amount}` : "amount missing"}`);
 
     const prep = data.upcomingJobs.slice(0, 5).map((job) => `${job.jobTitle}: ${job.recommendedAction}`);
     const money = [...data.pipeline.completedButUnpaid, ...data.pipeline.awaitingApproval].slice(0, 5).map((item) => `${item.title}: ${item.reason || "Move this forward."}`);
@@ -69,13 +69,13 @@ export default function AgentPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
+    <main className="mx-auto min-h-screen max-w-6xl px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-pine">
           <ArrowLeft className="h-4 w-4" />
           Dashboard
         </Link>
-        <button className={buttonClass} onClick={() => load(true)} disabled={loading}>
+        <button className={`${buttonClass} w-full sm:w-auto`} onClick={() => load(true)} disabled={loading}>
           <RefreshCw className="h-4 w-4" />
           Refresh synced data
         </button>
@@ -103,7 +103,7 @@ export default function AgentPage() {
           ))}
         </div>
 
-        {answer ? <pre className="mt-5 whitespace-pre-wrap rounded-md bg-ink p-4 text-xs leading-relaxed text-white">{answer}</pre> : null}
+        {answer ? <pre className="mt-5 max-w-full overflow-auto whitespace-pre-wrap rounded-md bg-ink p-4 text-xs leading-relaxed text-white">{answer}</pre> : null}
       </Panel>
     </main>
   );
