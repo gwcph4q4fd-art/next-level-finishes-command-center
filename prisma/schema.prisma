@@ -119,6 +119,7 @@ model Estimate {
 
   lead            Lead?    @relation(fields: [leadId], references: [id])
   customer        Customer? @relation(fields: [customerId], references: [id])
+  drafts          AiDraft[]
 }
 
 model Job {
@@ -176,6 +177,7 @@ model AiDraft {
   type          DraftType
   status        DraftStatus @default(DRAFTED)
   leadId        String?
+  estimateId    String?
   prompt        String
   output        String
   model         String?
@@ -184,9 +186,11 @@ model AiDraft {
   createdAt     DateTime    @default(now())
 
   lead          Lead?       @relation(fields: [leadId], references: [id])
+  estimate      Estimate?   @relation(fields: [estimateId], references: [id])
 
   @@index([type])
   @@index([createdAt])
+  @@index([estimateId])
 }
 
 model IntegrationConnection {
