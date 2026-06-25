@@ -50,13 +50,13 @@ export function JobberListPage({ collection }: { collection: Collection }) {
   }, [collection, data]);
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
+    <main className="mx-auto min-h-screen max-w-6xl px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-pine">
           <ArrowLeft className="h-4 w-4" />
           Dashboard
         </Link>
-        <button className={buttonClass} onClick={() => load(true)} disabled={loading}>
+        <button className={`${buttonClass} w-full sm:w-auto`} onClick={() => load(true)} disabled={loading}>
           <RefreshCw className="h-4 w-4" />
           {loading ? "Loading..." : "Refresh Jobber"}
         </button>
@@ -93,7 +93,7 @@ export function JobberListPage({ collection }: { collection: Collection }) {
 
 function JobRecord({ job }: { job: JobberJobCard }) {
   return (
-    <article className="rounded-md border border-ink/10 bg-white p-4 transition hover:border-pine/40 hover:shadow-soft">
+    <article className="min-w-0 rounded-md border border-ink/10 bg-white p-4 transition hover:border-pine/40 hover:shadow-soft">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase text-steel">{job.clientName}</p>
@@ -106,9 +106,9 @@ function JobRecord({ job }: { job: JobberJobCard }) {
         <p>{job.startDate ? new Date(job.startDate).toLocaleString() : "Schedule missing"}</p>
         <p>{typeof job.total === "number" ? currency(job.total) : typeof job.quoteAmount === "number" ? `${currency(job.quoteAmount)} quote` : "Value missing"}</p>
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Link className="inline-flex min-h-10 flex-1 items-center justify-center rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white sm:flex-none" href={`/jobber/jobs/${encodeURIComponent(job.id)}`}>Open details</Link>
-        {job.jobberUrl ? <a className="inline-flex min-h-10 flex-1 items-center justify-center gap-1 rounded-md border border-ink/10 px-4 py-2 text-sm font-semibold text-ink sm:flex-none" href={job.jobberUrl} target="_blank" rel="noreferrer">Open Jobber <ExternalLink className="h-3 w-3" /></a> : null}
+      <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
+        <Link className="inline-flex min-h-11 items-center justify-center rounded-md bg-pine px-4 py-2 text-center text-sm font-semibold text-white" href={`/jobber/jobs/${encodeURIComponent(job.id)}`}>Open details</Link>
+        {job.jobberUrl ? <a className="inline-flex min-h-11 items-center justify-center gap-1 rounded-md border border-ink/10 px-4 py-2 text-center text-sm font-semibold text-ink" href={job.jobberUrl} target="_blank" rel="noreferrer">Open Jobber <ExternalLink className="h-3 w-3" /></a> : null}
       </div>
     </article>
   );
@@ -118,7 +118,7 @@ function PipelineRecord({ item, collection }: { item: JobberPipelineItem; collec
   const detailHref = `/jobber/${collection}/${encodeURIComponent(item.id)}`;
 
   return (
-    <article className="rounded-md border border-ink/10 bg-white p-4 transition hover:border-pine/40 hover:shadow-soft">
+    <article className="min-w-0 rounded-md border border-ink/10 bg-white p-4 transition hover:border-pine/40 hover:shadow-soft">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h2 className="break-words text-base font-bold text-ink">{item.title}</h2>
         {item.status ? <Badge tone="blue">{item.status}</Badge> : null}
@@ -129,9 +129,9 @@ function PipelineRecord({ item, collection }: { item: JobberPipelineItem; collec
         {item.date ? <p>{new Date(item.date).toLocaleDateString()}</p> : <p>Date not returned</p>}
         {item.reason ? <p className="text-clay">{item.reason}</p> : null}
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Link className="inline-flex min-h-10 flex-1 items-center justify-center rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white sm:flex-none" href={detailHref}>Open details</Link>
-        {item.jobberUrl ? <a className="inline-flex min-h-10 flex-1 items-center justify-center gap-1 rounded-md border border-ink/10 px-4 py-2 text-sm font-semibold text-ink sm:flex-none" href={item.jobberUrl} target="_blank" rel="noreferrer">Open Jobber <ExternalLink className="h-3 w-3" /></a> : null}
+      <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
+        <Link className="inline-flex min-h-11 items-center justify-center rounded-md bg-pine px-4 py-2 text-center text-sm font-semibold text-white" href={detailHref}>Open details</Link>
+        {item.jobberUrl ? <a className="inline-flex min-h-11 items-center justify-center gap-1 rounded-md border border-ink/10 px-4 py-2 text-center text-sm font-semibold text-ink" href={item.jobberUrl} target="_blank" rel="noreferrer">Open Jobber <ExternalLink className="h-3 w-3" /></a> : null}
       </div>
     </article>
   );
@@ -169,7 +169,7 @@ export function JobberPipelineDetailPage({ collection, id }: { collection: Exclu
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-4 py-5 sm:px-6 lg:px-8">
+    <main className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
       <Link href={`/jobber/${collection}`} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-pine">
         <ArrowLeft className="h-4 w-4" />
         Back to {titles[collection]}
