@@ -39,7 +39,7 @@ export default function JobberClientDetailPage({ params }: { params: { id: strin
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
+    <main className="mx-auto min-h-screen max-w-6xl px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
       <Link href="/jobber/clients" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-pine">
         <ArrowLeft className="h-4 w-4" />
         Clients
@@ -53,7 +53,7 @@ export default function JobberClientDetailPage({ params }: { params: { id: strin
           <Panel
             title={detail.client.title}
             action={detail.client.jobberUrl ? (
-              <a className="inline-flex items-center gap-2 text-sm font-semibold text-pine" href={detail.client.jobberUrl} target="_blank" rel="noreferrer">
+              <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-ink/10 px-4 py-2 text-sm font-semibold text-pine" href={detail.client.jobberUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="h-4 w-4" />
                 Open Jobber
               </a>
@@ -82,7 +82,7 @@ export default function JobberClientDetailPage({ params }: { params: { id: strin
                 </button>
               ))}
             </div>
-            {draft ? <pre className="mt-4 whitespace-pre-wrap rounded-md bg-ink p-4 text-xs leading-relaxed text-white">{draft}</pre> : null}
+            {draft ? <pre className="mt-4 max-w-full overflow-auto whitespace-pre-wrap rounded-md bg-ink p-4 text-xs leading-relaxed text-white">{draft}</pre> : null}
           </Panel>
         </div>
       ) : null}
@@ -104,9 +104,9 @@ function RecordPanel({ title, items }: { title: string; items: JobberPipelineIte
     <Panel title={title}>
       <div className="grid gap-2">
         {items.length ? items.map((item) => (
-          <div key={item.id} className="rounded-md bg-primer/60 p-3">
+          <div key={item.id} className="min-w-0 rounded-md bg-primer/60 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-ink">{item.title}</p>
+              <p className="break-words text-sm font-semibold text-ink">{item.title}</p>
               {item.status ? <Badge tone="blue">{item.status}</Badge> : null}
             </div>
             <p className="mt-1 text-xs text-steel">{typeof item.amount === "number" ? currency(item.amount) : "Amount not returned"}</p>
