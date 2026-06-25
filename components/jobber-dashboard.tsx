@@ -148,7 +148,7 @@ export function JobberDashboard() {
       <Panel
         title="Jobber Command Center"
         action={
-          <button className={buttonClass} onClick={() => loadJobber(true)} disabled={loading || syncing}>
+          <button className={`${buttonClass} w-full sm:w-auto`} onClick={() => loadJobber(true)} disabled={loading || syncing}>
             <RefreshCw className="h-4 w-4" />
             {syncing ? "Syncing..." : "Sync Jobber"}
           </button>
@@ -220,7 +220,7 @@ export function JobberDashboard() {
 
       {data ? (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
             <CommandCard
               title="Next scheduled job"
               value={commandMetrics?.nextJob ? commandMetrics.nextJob.jobTitle : "No live job scheduled"}
@@ -251,7 +251,7 @@ export function JobberDashboard() {
             />
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+          <section className="grid gap-4 sm:gap-5 xl:grid-cols-[1fr_0.9fr]">
             <Panel title="Today's Operating Brief">
               <div className="grid gap-3">
                 {data.agent.focusToday.map((item) => (
@@ -302,7 +302,7 @@ export function JobberDashboard() {
             </Panel>
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="grid gap-4 sm:gap-5 xl:grid-cols-[1.2fr_0.8fr]">
             <Panel title="Upcoming Jobber Jobs" action={<Link href="/jobber/jobs" className="text-sm font-semibold text-pine">View all</Link>}>
               <div className="grid gap-4">
                 {data.upcomingJobs.length ? data.upcomingJobs.map((job) => <JobCard key={job.id} job={job} />) : (
@@ -329,7 +329,7 @@ export function JobberDashboard() {
               <Link href="/jobber/invoices">Invoices</Link>
               <Link href="/jobber/jobs">Jobs</Link>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
               {pipelineLabels.map(({ key, title, hrefBase }) => (
                 <PipelineColumn key={key} title={title} items={data.pipeline[key]} hrefBase={hrefBase} />
               ))}
@@ -362,9 +362,9 @@ function CommandCard({
   }[tone];
 
   return (
-    <Link href={href} className={`block rounded-lg border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${toneClass}`}>
+    <Link href={href} className={`block min-w-0 rounded-lg border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${toneClass}`}>
       <p className="text-xs font-semibold uppercase text-steel">{title}</p>
-      <p className="mt-2 line-clamp-2 min-h-12 text-lg font-bold text-ink">{value}</p>
+      <p className="mt-2 line-clamp-2 min-h-12 break-words text-lg font-bold text-ink">{value}</p>
       <p className="mt-2 line-clamp-3 text-sm text-steel">{detail}</p>
     </Link>
   );
@@ -372,8 +372,8 @@ function CommandCard({
 
 function JobCard({ job }: { job: JobberJobCard }) {
   return (
-    <article className="rounded-md border border-ink/10 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <article className="min-w-0 rounded-md border border-ink/10 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase text-steel">{job.clientName}</p>
           <h3 className="mt-1 break-words text-lg font-bold text-ink">{job.jobTitle}</h3>
@@ -384,11 +384,11 @@ function JobCard({ job }: { job: JobberJobCard }) {
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-pine px-4 py-3 text-sm font-semibold text-white" href={`/jobber/jobs/${encodeURIComponent(job.id)}`}>
+        <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-pine px-4 py-3 text-center text-sm font-semibold text-white" href={`/jobber/jobs/${encodeURIComponent(job.id)}`}>
           Open job details
         </Link>
         {job.jobberUrl ? (
-          <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-ink/10 bg-white px-4 py-3 text-sm font-semibold text-ink hover:border-pine/40" href={job.jobberUrl} target="_blank" rel="noreferrer">
+          <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-ink/10 bg-white px-4 py-3 text-center text-sm font-semibold text-ink hover:border-pine/40" href={job.jobberUrl} target="_blank" rel="noreferrer">
             <ExternalLink className="h-4 w-4" />
             Open in Jobber
           </a>
@@ -441,24 +441,24 @@ function Diagnostic({ label, value, tone = "normal" }: { label: string; value: s
 
 function PipelineColumn({ title, items, hrefBase }: { title: string; items: JobberPipelineItem[]; hrefBase: string }) {
   return (
-    <section className="rounded-md border border-ink/10 p-3">
+    <section className="min-w-0 rounded-md border border-ink/10 p-3">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
         <Badge>{String(items.length)}</Badge>
       </div>
       <div className="grid gap-2">
         {items.length ? items.map((item) => (
-          <div key={item.id} className="rounded-md bg-primer/60 p-3">
+          <div key={item.id} className="min-w-0 rounded-md bg-primer/60 p-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <p className="min-w-0 break-words text-sm font-semibold text-ink">{item.title}</p>
               {item.status ? <Badge tone="blue">{item.status}</Badge> : null}
             </div>
             {item.clientName ? <p className="mt-1 text-xs text-steel">{item.clientName}</p> : null}
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-steel">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-steel">
               {typeof item.amount === "number" ? <span>{currency(item.amount)}</span> : null}
               {item.date ? <span>{new Date(item.date).toLocaleDateString()}</span> : null}
-              {hrefBase !== "/agent" ? <Link className="font-semibold text-pine" href={`${hrefBase}/${encodeURIComponent(item.id)}`}>Open details</Link> : <Link className="font-semibold text-pine" href={hrefBase}>Ask agent</Link>}
-              {item.jobberUrl ? <a className="font-semibold text-pine" href={item.jobberUrl} target="_blank" rel="noreferrer">Open in Jobber</a> : null}
+              {hrefBase !== "/agent" ? <Link className="min-h-8 rounded-md bg-white px-2 py-1 font-semibold text-pine" href={`${hrefBase}/${encodeURIComponent(item.id)}`}>Open details</Link> : <Link className="min-h-8 rounded-md bg-white px-2 py-1 font-semibold text-pine" href={hrefBase}>Ask agent</Link>}
+              {item.jobberUrl ? <a className="min-h-8 rounded-md bg-white px-2 py-1 font-semibold text-pine" href={item.jobberUrl} target="_blank" rel="noreferrer">Open in Jobber</a> : null}
             </div>
             {item.reason ? <p className="mt-2 text-xs text-clay">{item.reason}</p> : null}
           </div>
