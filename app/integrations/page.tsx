@@ -105,10 +105,10 @@ export default function IntegrationsPage() {
   }, []);
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+    <main className="mx-auto min-h-screen max-w-6xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
       <header className="mb-6">
         <a href="/" className="text-sm font-semibold text-pine">Dashboard</a>
-        <h1 className="mt-2 text-3xl font-bold text-ink">Integration Setup</h1>
+        <h1 className="mt-2 text-2xl font-bold text-ink sm:text-3xl">Integration Setup</h1>
         <p className="mt-2 text-sm text-steel">
           Setup sections for the next phase. These integrations are not connected yet, and each starts read-only or draft-only.
         </p>
@@ -249,11 +249,11 @@ function InboundSetup({
       {status?.webhookUrl ? (
         <div>
           <p className="text-sm font-semibold text-ink">{name} Webhook URL</p>
-          <code className="mt-1 block overflow-x-auto rounded-md bg-ink p-3 text-xs text-white">{status.webhookUrl}</code>
+          <code className="mt-1 block max-w-full overflow-x-auto break-all rounded-md bg-ink p-3 text-xs text-white">{status.webhookUrl}</code>
           <p className="mt-2 text-xs text-steel">{instructions}</p>
         </div>
       ) : null}
-      <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink" href="/leads">
+      <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-ink/10 bg-white px-4 py-2 text-center text-sm font-semibold text-ink" href="/leads">
         Open Lead Inbox
       </a>
     </div>
@@ -329,7 +329,7 @@ function QuickBooksSetup({
       {status?.redirectUri ? (
         <div>
           <p className="text-sm font-semibold text-ink">QuickBooks Redirect URI</p>
-          <code className="mt-1 block overflow-x-auto rounded-md bg-ink p-3 text-xs text-white">{status.redirectUri}</code>
+          <code className="mt-1 block max-w-full overflow-x-auto break-all rounded-md bg-ink p-3 text-xs text-white">{status.redirectUri}</code>
           <p className="mt-2 text-xs text-steel">
             If Intuit says there is a connection problem after sign-in, this exact URI must be saved in the Intuit app under Production Keys & OAuth redirect URIs.
           </p>
@@ -337,7 +337,7 @@ function QuickBooksSetup({
       ) : null}
 
       <a
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white transition hover:bg-pine/90 aria-disabled:pointer-events-none aria-disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-pine/90 aria-disabled:pointer-events-none aria-disabled:opacity-60"
         href="/api/integrations/quickbooks/connect"
         aria-disabled={!status?.configured}
       >
@@ -420,7 +420,7 @@ function JobberSetup({
       {status?.redirectUri ? (
         <div>
           <p className="text-sm font-semibold text-ink">Jobber Redirect URI</p>
-          <code className="mt-1 block overflow-x-auto rounded-md bg-ink p-3 text-xs text-white">{status.redirectUri}</code>
+          <code className="mt-1 block max-w-full overflow-x-auto break-all rounded-md bg-ink p-3 text-xs text-white">{status.redirectUri}</code>
         </div>
       ) : null}
 
@@ -429,7 +429,7 @@ function JobberSetup({
       ) : null}
 
       <a
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white transition hover:bg-pine/90 aria-disabled:pointer-events-none aria-disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-pine px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-pine/90 aria-disabled:pointer-events-none aria-disabled:opacity-60"
         href="/api/integrations/jobber/connect"
         aria-disabled={!status?.configured}
       >
