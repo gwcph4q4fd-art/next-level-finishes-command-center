@@ -11,7 +11,7 @@ type Notes = {
   lastError?: string | null;
   lastLeadId?: string;
   lastDraftId?: string;
-  diagnostics?: Record<string, string | boolean | null | undefined>;
+  diagnostics?: Record<string, string | boolean | number | null | undefined>;
   smsAiPrompt?: string;
   promptUpdatedAt?: string;
   promptUpdatedBy?: string;
@@ -69,6 +69,8 @@ export async function getInboundIntegrationStatus(provider: InboundProvider) {
     lastReceivedAt: notes.lastReceivedAt || null,
     lastError: notes.lastError || null,
     lastLeadId: notes.lastLeadId || null,
+    lastDraftId: notes.lastDraftId || null,
+    diagnostics: notes.diagnostics || {},
     webhookUrl: notes.webhookUrl || metaConfig?.webhookUrl || twilioConfig?.webhookUrl,
     meta: metaConfig,
     twilio: twilioConfig
@@ -169,15 +171,24 @@ export function verifyMetaSignature(rawBody: string, signature?: string | null) 
   if (!secret) return { checked: false, valid: true };
   if (!signature?.startsWith("sha256=")) return { checked: true, valid: false };
   const expected = `sha256=${crypto.createHmac("sha256", secret).update(rawBody).digest("hex")}`;
+  if (signature.length !== expected.length) return { checked: true, valid: false };
   return { checked: true, valid: crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected)) };
 }
 
-export function verifyTwilioSignature(url: string, params: URLSearchParams, signature?: string | null) {
+export function verifyTwilioSignature(urls: string | string[], params: URLSearchParams, signature?: string | null) {
   const token = process.env.TWILIO_AUTH_TOKEN;
   if (!token) return { checked: false, valid: true };
   if (!signature) return { checked: true, valid: false };
+  const candidates = Array.isArray(urls) ? urls : [urls];
   const sorted = Array.from(params.entries()).sort(([a], [b]) => a.localeCompare(b));
-  const base = sorted.reduce((value, [key, next]) => `${value}${key}${next}`, url);
-  const expected = crypto.createHmac("sha1", token).update(base).digest("base64");
-  return { checked: true, valid: crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected)) };
+
+  for (const url of candidates.filter(Boolean)) {
+    const base = sorted.reduce((value, [key, next]) => `${value}${key}${next}`, url);
+    const expected = crypto.createHmac("sha1", token).update(base).digest("base64");
+    if (signature.length === expected.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+      return { checked: true, valid: true, matchedUrl: url };
+    }
+  }
+
+  return { checked: true, valid: false, matchedUrl: null };
 }

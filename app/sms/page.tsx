@@ -11,7 +11,9 @@ type TwilioStatus = {
   lastReceivedAt?: string | null;
   lastError?: string | null;
   lastLeadId?: string | null;
+  lastDraftId?: string | null;
   webhookUrl?: string;
+  diagnostics?: Record<string, string | boolean | number | null | undefined>;
   twilio?: {
     accountSidConfigured: boolean;
     authTokenConfigured: boolean;
@@ -159,7 +161,10 @@ export default function SmsCommandCenterPage() {
               <Diag label="TWILIO_PHONE_NUMBER" value={status?.twilio?.phoneNumberConfigured ? "Configured" : "Optional/missing in Vercel"} />
               <Diag label="Last received" value={status?.lastReceivedAt ? new Date(status.lastReceivedAt).toLocaleString() : "Never"} />
               <Diag label="Last lead id" value={status?.lastLeadId || "None yet"} />
+              <Diag label="Last draft id" value={status?.lastDraftId || "None yet"} />
               <Diag label="Last error" value={status?.lastError || "None"} bad={Boolean(status?.lastError)} />
+              <Diag label="Signature checked" value={String(status?.diagnostics?.signatureChecked ?? "Not yet")} />
+              <Diag label="AI model" value={String(status?.diagnostics?.aiModel || "No draft yet")} />
             </div>
           </div>
         </Panel>
@@ -203,8 +208,11 @@ export default function SmsCommandCenterPage() {
             <div className="grid gap-2 rounded-md bg-primer/60 p-3 text-xs text-steel sm:grid-cols-2">
               <Diag label="Last received" value={status?.lastReceivedAt ? new Date(status.lastReceivedAt).toLocaleString() : "Never"} />
               <Diag label="Last lead id" value={status?.lastLeadId || "None yet"} />
+              <Diag label="Last draft id" value={status?.lastDraftId || "None yet"} />
               <Diag label="Last error" value={status?.lastError || "None"} bad={Boolean(status?.lastError)} />
               <Diag label="Twilio phone number" value={status?.twilio?.phoneNumberConfigured ? "Configured" : "Optional/missing"} />
+              <Diag label="Signature matched URL" value={String(status?.diagnostics?.signatureMatchedUrl || "No inbound SMS yet")} />
+              <Diag label="Prompt source" value={String(status?.diagnostics?.promptSource || "No draft yet")} />
             </div>
           </div>
         </Panel>
